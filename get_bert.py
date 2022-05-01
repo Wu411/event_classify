@@ -1,35 +1,8 @@
 #! -*- coding: utf-8 -*-
 # 测试代码可用性: 提取特征
 import time
-import re
-from jieba import analyse
-import jieba
-#from bert4keras.backend import keras
-#from bert4keras.models import build_transformer_model
-#from bert4keras.tokenizers import Tokenizer
 from bert_serving.client import BertClient
-import numpy as np
 import pandas as pd
-import jieba
-import bert
-import json
-#from keras.models import Model
-#from bert4keras.backend import keras, K
-from bert4keras.models import build_transformer_model
-from bert4keras.tokenizers import Tokenizer
-#from bert4keras.optimizers import Adam
-#from bert4keras.snippets import sequence_padding, DataGenerator
-#from bert4keras.snippets import open
-#from bert4keras.layers import ConditionalRandomField
-#from keras.layers import Dense
-#from keras.models import Model
-#from tqdm import tqdm
-#from keras.layers import Dropout, Dense
-
-#from keras_bert import extract_embeddings
-
-
-# os.environ['CUDA_VISIBLE_DEVICES'] = '-1' 
 
 config_path = 'chinese_L-12_H-768_A-12/bert_config.json'
 checkpoint_path = 'chinese_L-12_H-768_A-12/bert_model.ckpt'
@@ -71,7 +44,7 @@ def getbert(data,vector_name='mean'):
     end = time.clock()
     print('Running time: %s Seconds' % (end - start))
     return output
-
+'''
 if __name__ == "__main__":
         
 
@@ -96,3 +69,4 @@ if __name__ == "__main__":
     output=getbert(data)
     print('保存数据')
     np.savetxt("text_vectors_new.txt",output)
+'''

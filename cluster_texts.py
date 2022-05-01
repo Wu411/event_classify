@@ -16,6 +16,8 @@ import matplotlib.pyplot as plt
 import similarity
 import tensorflow as tf
 import get_grouplabel_bert
+import get_bert
+import get_keyword_new
 from sklearn.metrics.pairwise import cosine_similarity
 import copy
 
@@ -95,36 +97,13 @@ def cul_simlarity(center,group_label,group_bert):
             groups_result.append(group)
     return groups_result,simi
 
-def noise_cul_simlarity(center,group_label,group_bert):
-    '''groups_result={}
-    simi={}
-    group_num=list(group_label.keys())
-    for k,v in enumerate(center):
-        score=[]
-        groups_result[k] = []
-        for j in group_bert:
-            s=similarity.cosSim(v,j)
-            score.append(s)
-        max_score = max(score)
-        simi[k] = max_score
-        for i, x in enumerate(score):
-            if x == max_score:
-                group = group_num[i]
-                groups_result[k].append(group)
-    return groups_result,simi'''
-    groups_result = []
-    group_num = list(group_label.keys())
-    score = []
-    for i in group_bert:
-        s = similarity.cosSim(center, i)[0]
-        score.append(s)
-    max_score = max(score)
-    simi = max_score
-    for i, x in enumerate(score):
-        if x == max_score:
-            group = group_num[i]
-            groups_result.append(group)
-    return groups_result, simi
+def cul_clusters_threshold(center_pos,points):
+    min=1
+    for i in points:
+        s = similarity.cosSim(center_pos[0], i)
+        if s<min:
+            min=s
+    return min
 
 #可视化
 def plot_embedding_3d(X, target, num,title=None):
@@ -159,31 +138,25 @@ def plot_embedding_2d(data, labels, num,title=None):
 
 
 if __name__ == "__main__":
-    
+
+    path = 'D:\\毕设数据\\数据\\监控事件_202201.xlsx'
+    summary, fixkeyword = get_keyword_new.load_data(path)  # 读取并处理数据summary
+
+    # 获取每条数据关键词
+    res = []
+    for i, j in zip(fixkeyword, summary):
+        res.append(get_keyword_new.getkeyword(i, j, get_keyword_new.keywords_dict))
+    df = pd.read_excel(path, sheet_name="Sheet1")
+    df['keyword_new'] = res
+    df.to_excel(path, sheet_name="Sheet1")
+
+    # 根据提取特征的方法获得词向量
+    data = get_bert.load_data(path)
+    print('开始提取')
+    feature = get_bert.getbert(data)
     # 读取提取的特征
-    feature = np.loadtxt("text_vectors_new.txt")
+    #feature = np.loadtxt("text_vectors_new.txt")
     #print(feature.shape)
-
-    ''''# k-means 聚类
-    model = KMeans(n_clusters = 122, max_iter = 500, random_state = 12)
-    kmeans = model.fit(std_data)
-
-    # birth聚类
-   
-    lists = [10,25]
-    best_score = 0
-    best_i = -1
-    for i in lists:
-        print(i)
-        y_pred = Birch(branching_factor=i, n_clusters = 9, threshold=0.5,compute_labels=True).fit_predict(feature)
-        score = evaluate(y_pred)
-        if score > best_score:
-            best_score = score
-            best_i = i
-        print(metrics.calinski_harabaz_score(feature, y_pred)) 
-        print(best_score)
-        print(best_i)
-        '''
 
     #DBSCAN
     '''eps = np.arange(0.2, 1, 0.1)  # eps参数从0.2开始到4，每隔0.2进行一次
@@ -241,13 +214,6 @@ if __name__ == "__main__":
     n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)  # 获取分簇的数目
     print('分簇的数目: %d' % n_clusters_)
     print("轮廓系数: %0.3f" % metrics.silhouette_score(feature, labels))
-    labels_dict={}
-    for i in labels:
-        if i not in labels_dict:
-            labels_dict[i]=1
-        else:
-            labels_dict[i]+=1
-    #print(labels_dict)
 
     #可视化
     '''tsne = TSNE(n_components=2, init='pca', random_state=0)
@@ -266,11 +232,21 @@ if __name__ == "__main__":
         label_classify[a].append(data)
         pos += 1
     clusters_center = {}
+    clusters_threshold={}
     for label, data in label_classify.items():
         if label != -1:
             center_pos = cluster_center(data)
+            threshold=cul_clusters_threshold(center_pos, data)
+            clusters_threshold[label]=threshold
             clusters_center[label] = center_pos
-
+    with open("clusters_threshold.txt", "w", encoding='utf-8') as f:
+        for cluster, threshold in clusters_threshold.items():
+            f.writelines(str(cluster) + ':' + str(threshold))
+            f.write('\n')
+    with open("clusters_center.txt", "w", encoding='utf-8') as f:
+        for label, center_pos in clusters_center.items():
+            f.writelines(str(label) + ':' + str(center_pos[0].tolist()))
+            f.write('\n')
     path = 'D:\\毕设数据\\数据\\event_event.xls'
     group_label_dict = get_grouplabel_bert.get_group_keyword(path)
     group_label_bert,maxlen = get_grouplabel_bert.get_bert(group_label_dict)
@@ -292,6 +268,10 @@ if __name__ == "__main__":
             event_cluster_result[i] = noise_group_result[pos]
             similarity_result[i] = noise_simi[pos]
             pos+=1
+    with open("clusters_group.txt", "w", encoding='utf-8') as f:
+        for cluster, group in cluster_group_result.items():
+            f.writelines(str(cluster) + ':' + str(group))
+            f.write('\n')
 
     print('start write')
     path1 = 'D:\\毕设数据\\数据\\监控事件_202201.xlsx'
