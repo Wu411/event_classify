@@ -120,6 +120,7 @@ def event_solution(event_group_num):
     return solu
 
 if __name__=="__main__":
+    #本程序用于对新数据进行处理
 
     #获取所有类别的标签label的分词结果的字典
     path = 'D:\\毕设数据\\数据\\event_event.xls'

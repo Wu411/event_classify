@@ -48,20 +48,7 @@ def getbert(data,vector_name='mean'):
     return output
 
 if __name__ == "__main__":
-        
-
-    # 词向量获取方法 cls,mean,
-    #vector_name = 'mean'
-    #tokenizer = Tokenizer(dict_path, do_lower_case=True)  # 建立分词器
-    #model = build_transformer_model(config_path, checkpoint_path)  # 建立模型，加载权重
-    #maxlen = 70
-
-    # layer_name = 'Transformer-9-FeedForward-Norm' #获取层的名称
-    # intermediate_layer_model = Model(inputs=model.input, 
-    #                              outputs=model.get_layer(layer_name).output)#创建的新模型
-    #for layers  in model.layers:
-    #    print(layers.name)
-    #maxlen = 70
+    #本程序用于获取现有数据的词向量
 
     # 读取处理数据
     path='D:\\毕设数据\\数据\\监控事件_202201.xlsx'

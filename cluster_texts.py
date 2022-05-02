@@ -143,23 +143,8 @@ def plot_embedding_2d(data, labels, num,title=None):
 
 
 if __name__ == "__main__":
+    #本程序用于对现有数据进行聚类及分类
 
-    '''path = 'D:\\毕设数据\\数据\\监控事件_202201.xlsx'
-    summary, fixkeyword = get_keyword_new.load_data(path)  # 读取并处理数据summary
-
-    # 获取每条数据关键词
-    res = []
-    for i, j in zip(fixkeyword, summary):
-        res.append(get_keyword_new.getkeyword(i, j, get_keyword_new.keywords_dict))
-    df = pd.read_excel(path, sheet_name="Sheet1")
-    df['keyword_new'] = res
-    df.to_excel(path, sheet_name="Sheet1")
-
-    # 根据提取特征的方法获得词向量
-    data = get_bert.load_data(path)
-    print('开始提取')
-    feature = get_bert.getbert(data)
-    # 读取提取的特征'''
     feature = np.loadtxt("text_vectors_new.txt")
     #print(feature.shape)
 

@@ -16,6 +16,8 @@ with open("self_dict.txt", "r", encoding='utf-8') as f2:
     for line in f2.readlines():
         word = line.strip('\n')
         self_dict.append(word)
+
+#对自定义词典进行自动更新
 def update_selfdict(path):
     df = pd.read_excel(path, sheet_name="Sheet1")
     data=df['label'].dropna().drop_duplicates().values.tolist()
@@ -29,6 +31,8 @@ def update_selfdict(path):
             f1.writelines(i)
             f1.write('\n')
     return self_dict
+
+#获取各个类别的标签label并分词
 def get_group_keyword(path):
     update_selfdict(path)
     df = pd.read_excel(path, sheet_name="Sheet1")
@@ -52,12 +56,20 @@ def get_bert(dict):
     output=[]
     for seg_list in dict.values():
         vector = bc.encode(seg_list)
-        output.append(vector)
+        output.append(vector)#将所有类别的标签label的分词结果转化为词向量
+
     tmp = [0 for i in range(768)]
-    output,maxlen=fill(output,tmp)
+    output,maxlen=fill(output,tmp)#将所有类别的标签label分词的词向量个数补齐
+
+    with open('group_label_bert.txt', 'w') as outfile:#将所有类别标签label分词的词向量存入文件
+        for slice_2d in output:
+            np.savetxt(outfile, slice_2d, delimiter=',')
+    with open('group_label_bert_size.txt', 'w') as out:#将所有类别标签label分词的词向量的各个维度存入文件
+        out.writelines(str(output.shape))
+        out.write('\n')
     return output,maxlen
 
-def fill(list_args, fillvalue):
+def fill(list_args, fillvalue):#将不同类别标签label分词的词向量个数补齐
     my_len = [len(k) for k in list_args]
     max_num = max(my_len)
     result = []
@@ -72,4 +84,11 @@ def fill(list_args, fillvalue):
 
     return result,max_num
 
+if __name__ == "__main__":
+    #当类别的标签发生变化时运行本程序
+    path = 'D:\\毕设数据\\数据\\event_event.xls'
+    #获取所有类别的标签label的分词结果的字典
+    group_label_dict = get_group_keyword(path)
+    #获取所有类别的标签label的分词结果的词向量
+    group_label_bert, maxlen = get_bert(group_label_dict)
 
