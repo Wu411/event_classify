@@ -17,6 +17,8 @@ similarity：用于计算相似度
 
 stopwords：停用词表
 
+host_name:主机名
+
 fixedwords：已确定必须出现的关键词
 
 self_dict：自定义词典
