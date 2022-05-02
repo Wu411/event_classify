@@ -3,6 +3,7 @@
 import time
 from bert_serving.client import BertClient
 import pandas as pd
+import numpy as np
 
 config_path = 'chinese_L-12_H-768_A-12/bert_config.json'
 checkpoint_path = 'chinese_L-12_H-768_A-12/bert_model.ckpt'
@@ -44,12 +45,12 @@ def getbert(data,vector_name='mean'):
     end = time.clock()
     print('Running time: %s Seconds' % (end - start))
     return output
-'''
+
 if __name__ == "__main__":
         
 
     # 词向量获取方法 cls,mean,
-    vector_name = 'mean'
+    #vector_name = 'mean'
     #tokenizer = Tokenizer(dict_path, do_lower_case=True)  # 建立分词器
     #model = build_transformer_model(config_path, checkpoint_path)  # 建立模型，加载权重
     #maxlen = 70
@@ -69,4 +70,3 @@ if __name__ == "__main__":
     output=getbert(data)
     print('保存数据')
     np.savetxt("text_vectors_new.txt",output)
-'''
