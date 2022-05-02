@@ -4,6 +4,7 @@ import time
 from bert_serving.client import BertClient
 import pandas as pd
 import numpy as np
+import get_keyword_new
 
 config_path = 'chinese_L-12_H-768_A-12/bert_config.json'
 checkpoint_path = 'chinese_L-12_H-768_A-12/bert_model.ckpt'
@@ -64,6 +65,17 @@ if __name__ == "__main__":
 
     # 读取处理数据
     path='D:\\毕设数据\\数据\\监控事件_202201.xlsx'
+    summary, fixkeyword = get_keyword_new.load_data(path)  # 读取并处理数据summary
+
+    # 获取每条数据关键词
+    res = []
+    for i, j in zip(fixkeyword, summary):
+        res.append(get_keyword_new.getkeyword(i, j, get_keyword_new.keywords_dict))
+    df = pd.read_excel(path, sheet_name="Sheet1")
+    df['keyword_new'] = res
+    df.to_excel(path, sheet_name="Sheet1")
+
+    #提取每条数据关键词词向量
     data=load_data(path)
     print('开始提取')
     # 根据提取特征的方法获得词向量

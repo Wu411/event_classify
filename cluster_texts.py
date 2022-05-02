@@ -28,6 +28,7 @@ def cluster_center(X):
     # 获取质心
     return(kmeans.cluster_centers_)
 
+#注意力机制
 def attention(query,key_list):
 
     result = tf.keras.layers.Attention()([query, key_list])
@@ -36,36 +37,39 @@ def attention(query,key_list):
 
 def attention_get_bert(clusters_center,group_label_dict,group_bert,flag,maxlen):
     key_list = tf.convert_to_tensor(np.asarray(group_bert).reshape(-1, maxlen, 768))
+    #聚类中心与各类别相似度衡量
     if flag==True:
-        cluster_group_result = {}
-        cluster_simi = {}
+        cluster_group_result = {}#聚类分类结果
+        cluster_simi = {}#聚类分类相似度结果
         num=0
         for center in clusters_center.values():
             query = tf.convert_to_tensor(np.asarray(center).reshape(1, 1, 768))
-            result=attention(query,key_list)
+            result=attention(query,key_list)#利用注意力机制和中心向量得出的所有的类别代表向量
             with tf.Session() as sess:
                 result=result.eval()
-            groups_result,simi=cul_simlarity(center[0],group_label_dict,result)
+            groups_result,simi=cul_simlarity(center[0],group_label_dict,result)#相似度衡量
             index = list(clusters_center.keys())[num]
             cluster_group_result[index] = groups_result
             cluster_simi[index] = simi
             num += 1
         return cluster_group_result,cluster_simi
+    #噪点数据与各类别相似度衡量
     else:
-        noise_group_result = []
-        noise_simi = []
+        noise_group_result = []#噪点分类结果
+        noise_simi = []#噪点分类相似度结果
         num=0
         for noise in clusters_center:
             query = tf.convert_to_tensor(np.asarray(noise).reshape(1, 1, 768))
-            result = attention(query, key_list)
+            result = attention(query, key_list)#利用注意力机制和噪点数据向量得出的所有的类别代表向量
             with tf.Session() as sess:
                 result = result.eval()
-            groups_result, simi = cul_simlarity(noise, group_label_dict, result)
+            groups_result, simi = cul_simlarity(noise, group_label_dict, result)#相似度衡量
             noise_group_result.append(groups_result)
             noise_simi.append(simi)
             num+=1
         return noise_group_result,noise_simi
 
+#计算相似度及分类
 def cul_simlarity(center,group_label,group_bert):
     '''groups_result={}
     simi={}
@@ -97,6 +101,7 @@ def cul_simlarity(center,group_label,group_bert):
             groups_result.append(group)
     return groups_result,simi
 
+#计算相似度阈值
 def cul_clusters_threshold(center_pos,points):
     min=1
     for i in points:
@@ -139,7 +144,7 @@ def plot_embedding_2d(data, labels, num,title=None):
 
 if __name__ == "__main__":
 
-    path = 'D:\\毕设数据\\数据\\监控事件_202201.xlsx'
+    '''path = 'D:\\毕设数据\\数据\\监控事件_202201.xlsx'
     summary, fixkeyword = get_keyword_new.load_data(path)  # 读取并处理数据summary
 
     # 获取每条数据关键词
@@ -154,8 +159,8 @@ if __name__ == "__main__":
     data = get_bert.load_data(path)
     print('开始提取')
     feature = get_bert.getbert(data)
-    # 读取提取的特征
-    #feature = np.loadtxt("text_vectors_new.txt")
+    # 读取提取的特征'''
+    feature = np.loadtxt("text_vectors_new.txt")
     #print(feature.shape)
 
     #DBSCAN
@@ -214,7 +219,9 @@ if __name__ == "__main__":
     n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)  # 获取分簇的数目
     print('分簇的数目: %d' % n_clusters_)
     print("轮廓系数: %0.3f" % metrics.silhouette_score(feature, labels))
-
+    #记录噪点数
+    with open("noise_num.txt", "w", encoding='utf-8') as f:
+        f.write(str(len(labels))+' '+str(raito_num)+' '+str(raito))
     #可视化
     '''tsne = TSNE(n_components=2, init='pca', random_state=0)
     #t0 = time()
@@ -224,38 +231,58 @@ if __name__ == "__main__":
 
     # 计算聚类中心
     pos = 0
-    label_classify = {}
+    label_classify = {}#各聚类中各点向量坐标字典
     for data in feature:
         a=labels[pos]
         if a not in label_classify:
             label_classify[a] = []
         label_classify[a].append(data)
         pos += 1
-    clusters_center = {}
-    clusters_threshold={}
+
+    clusters_center = {}#聚类中心向量字典
+    clusters_threshold={}#聚类相似度阈值字典
     for label, data in label_classify.items():
         if label != -1:
             center_pos = cluster_center(data)
-            threshold=cul_clusters_threshold(center_pos, data)
+            threshold=cul_clusters_threshold(center_pos, data)#计算聚类相似度阈值
             clusters_threshold[label]=threshold
             clusters_center[label] = center_pos
+    #将所有聚类的相似度阈值写入文件
     with open("clusters_threshold.txt", "w", encoding='utf-8') as f:
         for cluster, threshold in clusters_threshold.items():
             f.writelines(str(cluster) + ':' + str(threshold))
             f.write('\n')
+
+    #将所有聚类的聚类中心向量写入文件
     with open("clusters_center.txt", "w", encoding='utf-8') as f:
         for label, center_pos in clusters_center.items():
             f.writelines(str(label) + ':' + str(center_pos[0].tolist()))
             f.write('\n')
+
+
     path = 'D:\\毕设数据\\数据\\event_event.xls'
+
+    #获取所有类别的标签label的分词结果的字典
     group_label_dict = get_grouplabel_bert.get_group_keyword(path)
-    group_label_bert,maxlen = get_grouplabel_bert.get_bert(group_label_dict)
+    #group_label_bert,maxlen = get_grouplabel_bert.get_bert(group_label_dict)
+
+    #获取所有类别的标签label的分词结果的词向量
+    with open('group_label_bert_size.txt', 'r') as read:
+        for size in read.readlines():
+            size = size.strip('\n')
+            size = size.lstrip('(')
+            size = size.rstrip(')')
+            dim = size.split(', ')
+            dim1 = dim[0]
+            dim2 = dim[1]
+            dim3 = dim[2]
+    group_label_bert = np.loadtxt('group_label_bert.txt', delimiter=',').reshape((dim1, dim2, dim3))
 
     # 聚类成功相似度衡量
-    cluster_group_result,cluster_simi=attention_get_bert(clusters_center,group_label_dict,group_label_bert,True,maxlen)
+    cluster_group_result,cluster_simi=attention_get_bert(clusters_center,group_label_dict,group_label_bert,True,dim2)
 
     #聚类不成功相似度衡量
-    noise_group_result,noise_simi=attention_get_bert(label_classify[-1],group_label_dict,group_label_bert,False,maxlen)
+    noise_group_result,noise_simi=attention_get_bert(label_classify[-1],group_label_dict,group_label_bert,False,dim2)
 
     event_cluster_result = {}
     similarity_result={}
@@ -268,6 +295,8 @@ if __name__ == "__main__":
             event_cluster_result[i] = noise_group_result[pos]
             similarity_result[i] = noise_simi[pos]
             pos+=1
+
+    #将所有聚类的分类结果写入文件
     with open("clusters_group.txt", "w", encoding='utf-8') as f:
         for cluster, group in cluster_group_result.items():
             f.writelines(str(cluster) + ':' + str(group))
@@ -293,18 +322,16 @@ if __name__ == "__main__":
     #类别描述列
     description=[]
     for i in group:
-        L=[]
         for j in i:
-            L.append(df1[df1['id']==j]['description'].tolist()[0])
+            L=df1[df1['id']==j]['description'].tolist()
         description.append(L)
     df['description']=description
     #聚类列
     df['cluster_num']=labels
     label = []
     for i in group:
-        L = []
         for j in i:
-            L.append(df2[df2['group'] == j]['label'].tolist())
+            L=df2[df2['group'] == j]['label'].tolist()
         label.append(L)
     #类别label列
     df['label']=label

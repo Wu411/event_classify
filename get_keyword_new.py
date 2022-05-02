@@ -117,14 +117,4 @@ def update_selfdict(txt,res):#将下划线和连字符所连固定搭配动态�
         if i[0] not in res:
             res.append(i[0])
     return res
-if __name__ == "__main__":
-    path = 'D:\\毕设数据\\数据\\监控事件_202201.xlsx'
-    summary, fixkeyword = load_data(path)  # 读取并处理数据summary
 
-    # 获取每条数据关键词
-    res = []
-    for i, j in zip(fixkeyword, summary):
-        res.append(getkeyword(i, j, keywords_dict))
-    df = pd.read_excel(path, sheet_name="Sheet1")
-    df['keyword_new'] = res
-    df.to_excel(path, sheet_name="Sheet1")
