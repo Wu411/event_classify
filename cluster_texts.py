@@ -1,25 +1,14 @@
 from sklearn.cluster import KMeans
-import time
-from sklearn.cluster import Birch
-from sklearn.externals import joblib
 import numpy as np
-import pandas as pd
-import openpyxl
-import random
-import json
 from sklearn.cluster import DBSCAN
-from sklearn.cluster import Birch
 from sklearn import metrics
 from sklearn.manifold import TSNE
 import time
 import matplotlib.pyplot as plt
 import similarity
-import tensorflow as tf
 import get_grouplabel_bert
-import get_bert
-import get_keyword_new
-from sklearn.metrics.pairwise import cosine_similarity
-import copy
+import clusters_classify
+
 
 
 def cluster_center(X):
@@ -27,79 +16,6 @@ def cluster_center(X):
     kmeans.fit(X)
     # 获取质心
     return(kmeans.cluster_centers_)
-
-#注意力机制
-def attention(query,key_list):
-
-    result = tf.keras.layers.Attention()([query, key_list])
-
-    return result
-
-def attention_get_bert(clusters_center,group_label_dict,group_bert,flag,maxlen):
-    key_list = tf.convert_to_tensor(np.asarray(group_bert).reshape(-1, maxlen, 768))
-    #聚类中心与各类别相似度衡量
-    if flag==True:
-        cluster_group_result = {}#聚类分类结果
-        cluster_simi = {}#聚类分类相似度结果
-        num=0
-        for center in clusters_center.values():
-            query = tf.convert_to_tensor(np.asarray(center).reshape(1, 1, 768))
-            result=attention(query,key_list)#利用注意力机制和中心向量得出的所有的类别代表向量
-            with tf.Session() as sess:
-                result=result.eval()
-            groups_result,simi=cul_simlarity(center[0],group_label_dict,result)#相似度衡量
-            index = list(clusters_center.keys())[num]
-            cluster_group_result[index] = groups_result
-            cluster_simi[index] = simi
-            num += 1
-        return cluster_group_result,cluster_simi
-    #噪点数据与各类别相似度衡量
-    else:
-        noise_group_result = []#噪点分类结果
-        noise_simi = []#噪点分类相似度结果
-        num=0
-        for noise in clusters_center:
-            query = tf.convert_to_tensor(np.asarray(noise).reshape(1, 1, 768))
-            result = attention(query, key_list)#利用注意力机制和噪点数据向量得出的所有的类别代表向量
-            with tf.Session() as sess:
-                result = result.eval()
-            groups_result, simi = cul_simlarity(noise, group_label_dict, result)#相似度衡量
-            noise_group_result.append(groups_result)
-            noise_simi.append(simi)
-            num+=1
-        return noise_group_result,noise_simi
-
-#计算相似度及分类
-def cul_simlarity(center,group_label,group_bert):
-    '''groups_result={}
-    simi={}
-    group_num=list(group_label.keys())
-    for k,v in center.items():
-        score=[]
-        groups_result[k]=[]
-        for j in group_bert:
-            s=similarity.cosSim(v,j)[0]
-            score.append(s)
-        max_score=max(score)
-        simi[k]=max_score
-        for i, x in enumerate(score):
-            if x == max_score:
-                group = group_num[i]
-                groups_result[k].append(group)
-    return groups_result,simi'''
-    groups_result=[]
-    group_num = list(group_label.keys())
-    score=[]
-    for i in group_bert:
-        s = similarity.cosSim(center, i[0])
-        score.append(s)
-    max_score = max(score)
-    simi = max_score
-    for i, x in enumerate(score):
-        if x == max_score:
-            group = group_num[i]
-            groups_result.append(group)
-    return groups_result,simi
 
 #计算相似度阈值
 def cul_clusters_threshold(center_pos,points):
@@ -110,6 +26,79 @@ def cul_clusters_threshold(center_pos,points):
             min=s
     return min
 
+def update_dbscan(min_eps,max_eps,eps_step,min_min_samples,max_min_samples,min_samples_step):
+    eps = np.arange(min_eps, max_eps, eps_step)  # eps参数从min_eps开始到max_eps，每隔eps_step进行一次
+    min_samples = np.arange(min_min_samples, max_min_samples, min_samples_step)  # min_samples参数从min_min_samples开始到max_min_samples,每隔min_samples_step进行一次
+    best_score = 0
+    best_score_eps = 0
+    best_score_min_samples = 0
+    for i in eps:
+        for j in min_samples:
+            try:
+                DBS_clf = DBSCAN(eps=i, min_samples=j).fit(feature)
+                labels = DBS_clf.labels_  # 和X同一个维度，labels对应索引序号的值 为她所在簇的序号。若簇编号为-1，表示为噪声;
+                raito_num = 0
+                for v in labels:
+                    if v == -1:
+                        raito_num += 1
+                raito = raito_num / len(labels)
+                # labels=-1的个数除以总数，计算噪声点个数占总数的比例
+                n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)  # 获取分簇的数目
+                k = metrics.silhouette_score(feature, labels)
+                score = k - raito
+                if score > best_score:
+                    best_score = score
+                    best_score_eps = i
+                    best_score_min_samples = j
+            except:
+                DBS_clf = ''
+
+    DBS_clf = DBSCAN(eps=best_score_eps, min_samples=best_score_min_samples).fit(feature)
+    labels = DBS_clf.labels_  # 和X同一个维度，labels对应索引序号的值 为她所在簇的序号。若簇编号为-1，表示为噪声;
+    raito_num = 0
+    for v in labels:
+        if v == -1:
+            raito_num += 1
+    raito = raito_num / len(labels)
+    # labels=-1的个数除以总数，计算噪声点个数占总数的比例
+    print(best_score_eps, best_score_min_samples)
+    print('噪声比:', format(raito, '.2%'))
+    n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)  # 获取分簇的数目
+    print('分簇的数目: %d' % n_clusters_)
+    print("轮廓系数: %0.3f" % metrics.silhouette_score(feature, labels))
+    return best_score_eps,best_score_min_samples
+
+def cul_culsters_center(point_feature,point_labels):
+    # 计算聚类中心
+    pos = 0
+    label_classify = {}#各聚类中各点向量坐标字典
+    for data in point_feature:
+        a=point_labels[pos]
+        if a not in label_classify:
+            label_classify[a] = []
+        label_classify[a].append(data)
+        pos += 1
+
+    clusters_center = {}#聚类中心向量字典
+    clusters_threshold={}#聚类相似度阈值字典
+    for label, data in label_classify.items():
+        if label != -1:
+            center_pos = cluster_center(data)
+            threshold=cul_clusters_threshold(center_pos, data)#计算聚类相似度阈值
+            clusters_threshold[label]=threshold
+            clusters_center[label] = center_pos
+    #将所有聚类的相似度阈值写入文件
+    with open("clusters_threshold.txt", "w", encoding='utf-8') as f:
+        for cluster, threshold in clusters_threshold.items():
+            f.writelines(str(cluster) + ':' + str(threshold))
+            f.write('\n')
+
+    #将所有聚类的聚类中心向量写入文件
+    with open("clusters_center.txt", "w", encoding='utf-8') as f:
+        for label, center_pos in clusters_center.items():
+            f.writelines(str(label) + ':' + str(center_pos[0].tolist()))
+            f.write('\n')
+    return clusters_center,label_classify[-1]
 #可视化
 def plot_embedding_3d(X, target, num,title=None):
     #坐标缩放到[0,1]区间
@@ -148,47 +137,9 @@ if __name__ == "__main__":
     feature = np.loadtxt("text_vectors_new.txt")
     #print(feature.shape)
 
-    #DBSCAN
-    '''eps = np.arange(0.2, 1, 0.1)  # eps参数从0.2开始到4，每隔0.2进行一次
-    min_samples = np.arange(2, 4, 1)  # min_samples参数从2开始到20
-    best_score = 0
-    best_score_eps = 0
-    best_score_min_samples = 0
-    for i in eps:
-        for j in min_samples:
-            try:
-                DBS_clf = DBSCAN(eps=i, min_samples=j).fit(feature)
-                labels = DBS_clf.labels_  # 和X同一个维度，labels对应索引序号的值 为她所在簇的序号。若簇编号为-1，表示为噪声;
-                raito_num=0
-                for v in labels:
-                    if v == -1:
-                        raito_num += 1
-                raito = raito_num/len(labels)
-                # labels=-1的个数除以总数，计算噪声点个数占总数的比例
-                n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)  # 获取分簇的数目
-                k = metrics.silhouette_score(feature, labels)
-                score=k-raito
-                if score>best_score:
-                    best_score=score
-                    best_score_eps=i
-                    best_score_min_samples=j
-            except:
-                DBS_clf=''
+    #eps,min_samples=update_dbscan(0.2,2,0.1,2,10,1)
 
-    DBS_clf = DBSCAN(eps=best_score_eps, min_samples=best_score_min_samples).fit(feature)
-    labels = DBS_clf.labels_  # 和X同一个维度，labels对应索引序号的值 为她所在簇的序号。若簇编号为-1，表示为噪声;
-    raito_num = 0
-    for v in labels:
-        if v == -1:
-            raito_num += 1
-    raito = raito_num / len(labels)
-    # labels=-1的个数除以总数，计算噪声点个数占总数的比例
-    print(best_score_eps,best_score_min_samples)
-    print('噪声比:', format(raito, '.2%'))
-    n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)  # 获取分簇的数目
-    print('分簇的数目: %d' % n_clusters_)
-    print("轮廓系数: %0.3f" % metrics.silhouette_score(feature, labels))
-    '''
+    #DBSCAN
     start=time.clock()
     DBS_clf = DBSCAN(eps=0.2, min_samples=2).fit(feature)
     end = time.clock()
@@ -214,41 +165,13 @@ if __name__ == "__main__":
     plot_embedding_2d(data, labels, float(n_clusters_), title=None)'''
 
 
-    # 计算聚类中心
-    pos = 0
-    label_classify = {}#各聚类中各点向量坐标字典
-    for data in feature:
-        a=labels[pos]
-        if a not in label_classify:
-            label_classify[a] = []
-        label_classify[a].append(data)
-        pos += 1
-
-    clusters_center = {}#聚类中心向量字典
-    clusters_threshold={}#聚类相似度阈值字典
-    for label, data in label_classify.items():
-        if label != -1:
-            center_pos = cluster_center(data)
-            threshold=cul_clusters_threshold(center_pos, data)#计算聚类相似度阈值
-            clusters_threshold[label]=threshold
-            clusters_center[label] = center_pos
-    #将所有聚类的相似度阈值写入文件
-    with open("clusters_threshold.txt", "w", encoding='utf-8') as f:
-        for cluster, threshold in clusters_threshold.items():
-            f.writelines(str(cluster) + ':' + str(threshold))
-            f.write('\n')
-
-    #将所有聚类的聚类中心向量写入文件
-    with open("clusters_center.txt", "w", encoding='utf-8') as f:
-        for label, center_pos in clusters_center.items():
-            f.writelines(str(label) + ':' + str(center_pos[0].tolist()))
-            f.write('\n')
 
 
-    path = 'D:\\毕设数据\\数据\\event_event.xls'
+
+    #path = 'D:\\毕设数据\\数据\\event_event.xls'
 
     #获取所有类别的标签label的分词结果的字典
-    group_label_dict = get_grouplabel_bert.get_group_keyword(path)
+    #group_label_dict = get_grouplabel_bert.get_group_keyword(path)
     #group_label_bert,maxlen = get_grouplabel_bert.get_bert(group_label_dict)
 
     #获取所有类别的标签label的分词结果的词向量
@@ -263,12 +186,15 @@ if __name__ == "__main__":
             dim3 = dim[2]
     group_label_bert = np.loadtxt('group_label_bert.txt', delimiter=',').reshape((dim1, dim2, dim3))
 
+    #计算聚类中心或噪点数据向量
+    clusters_center,noise_points=cul_culsters_center(feature,labels)
     # 聚类成功相似度衡量
-    cluster_group_result,cluster_simi=attention_get_bert(clusters_center,group_label_dict,group_label_bert,True,dim2)
+    cluster_group_result,cluster_simi=clusters_classify.attention_get_bert(clusters_center,group_label_bert,True,dim2)
 
     #聚类不成功相似度衡量
-    noise_group_result,noise_simi=attention_get_bert(label_classify[-1],group_label_dict,group_label_bert,False,dim2)
+    noise_group_result,noise_simi=clusters_classify.attention_get_bert(noise_points,group_label_bert,False,dim2)
 
+    #收集聚类与噪点的分类结果
     event_cluster_result = {}
     similarity_result={}
     pos=0
@@ -287,6 +213,7 @@ if __name__ == "__main__":
             f.writelines(str(cluster) + ':' + str(group))
             f.write('\n')
 
+    '''
     print('start write')
     path1 = 'D:\\毕设数据\\数据\\监控事件_202201.xlsx'
     path2 = 'D:\\毕设数据\\数据\\event_group.xls'
@@ -328,5 +255,5 @@ if __name__ == "__main__":
             tmp.append(group_label_dict[j])
         label_cut.append(tmp)
     df['label_cut']=label_cut
-    df.to_excel(path1,sheet_name="Sheet1")
+    df.to_excel(path1,sheet_name="Sheet1")'''
 

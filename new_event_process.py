@@ -1,14 +1,12 @@
 from get_keyword_new import load_data,getkeyword,keywords_dict
-import get_bert
+from get_bert import getbert
 import pandas as pd
 import similarity
 import numpy as np
 import tensorflow as tf
-import get_grouplabel_bert
-from cluster_texts import cul_simlarity
-import os
-import schedule
-import time
+from get_grouplabel_bert import get_group_keyword
+from clusters_classify import cul_simlarity
+
 
 #打开聚类阈值表
 with open("clusters_threshold.txt", "r", encoding='utf-8') as f1:
@@ -71,21 +69,21 @@ def new_event_getbert(path):
     res = []
     for i, j in zip(fixkeyword, summary):
         res.append(getkeyword(i, j, keywords_dict))
-    output = get_bert.getbert(res)
+    output = getbert(res)
     return output
 
 #噪点数据相似度衡量及分类
-def noise_process(noise_point,group_label_dict):
+def noise_process(noise_point):
     key_list = tf.convert_to_tensor(groups_label_bert)
     query = tf.convert_to_tensor(np.asarray(noise_point).reshape(1, 1, 768))
     result = tf.keras.layers.Attention()([query, key_list])
     with tf.Session() as sess:
         result = result.eval()
-    groups_result, simi = cul_simlarity(noise_point, group_label_dict, result)
+    groups_result, simi = cul_simlarity(noise_point, result)
     return groups_result,simi
 
 #新数据分类
-def event_classify(event_bert,group_label_dict,noise_num):
+def event_classify(event_bert,noise_num):
     res=[]
     for new in event_bert:
         flag=False
@@ -103,7 +101,7 @@ def event_classify(event_bert,group_label_dict,noise_num):
             res.append(tmp)
         else:#未找到所属聚类，按噪点数据分类处理
             noise_num+=1
-            group_num, simi = noise_process(new, group_label_dict)
+            group_num, simi = noise_process(new)
             res.append(group_num)
     return res
 
@@ -123,8 +121,8 @@ if __name__=="__main__":
     #本程序用于对新数据进行处理
 
     #获取所有类别的标签label的分词结果的字典
-    path = 'D:\\毕设数据\\数据\\event_event.xls'
-    group_label_dict = get_grouplabel_bert.get_group_keyword(path)
+    #path = 'D:\\毕设数据\\数据\\event_event.xls'
+    #group_label_dict = get_group_keyword(path)
 
     #获取新数据词向量并将其加入到现有数据的词向量表中
     path='D:\毕设数据\数据\新监控事件.xlsx'
@@ -134,7 +132,7 @@ if __name__=="__main__":
     np.savetxt('text_vectors_new.txt')
 
     #对新数据进行分类并获取分类结果以及对应的处理方法
-    event_group_num=event_classify(feature,group_label_dict,noise_num)
+    event_group_num=event_classify(feature,noise_num)
     solutions=event_solution(event_group_num)
     #将处理方法写入新事件表中
     df = pd.read_excel(path, sheet_name="Sheet1")

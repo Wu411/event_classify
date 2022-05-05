@@ -20,7 +20,7 @@ with open("self_dict.txt", "r", encoding='utf-8') as f2:
 #对自定义词典进行自动更新
 def update_selfdict(path):
     df = pd.read_excel(path, sheet_name="Sheet1")
-    data=df['label'].dropna().drop_duplicates().values.tolist()
+    data=df['description'].dropna().drop_duplicates().values.tolist()
     for i in data:
         spec_words = re.findall(r'([a-zA-Z][a-zA-Z0-9]+([-_.][a-zA-Z0-9]+)+)', i)
         for i in spec_words:
@@ -36,14 +36,14 @@ def update_selfdict(path):
 def get_group_keyword(path):
     update_selfdict(path)
     df = pd.read_excel(path, sheet_name="Sheet1")
-    data = df.loc[:,['group','label']].dropna()
-    group = data['group'].drop_duplicates(keep='last').values.tolist()
+    data = df.loc[:,['id','description']]
+    group = data['id'].values.tolist()
     group_keyword={}
     jieba.load_userdict("self_dict.txt")
     for i in group:
         index=int(i)
         group_keyword[index]=[]
-        keywords=data.loc[data['group']==i]['label'].values.tolist()
+        keywords=data.loc[data['id']==i]['description'].values.tolist()
         for j in keywords:
             for k in jieba.lcut(j):
                 if k not in stopwords and k not in group_keyword[index]:

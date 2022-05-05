@@ -20,7 +20,7 @@ def load_data(path):
         i = i.lstrip('[')
         i = i.rstrip(']')
         i = i.replace('\'', '')
-        res.append(i.split(','))
+        res.append(i.split(', '))
     return res
 
 def getbert(data,vector_name='mean'):
@@ -58,14 +58,14 @@ if __name__ == "__main__":
     res = []
     for i, j in zip(fixkeyword, summary):
         res.append(get_keyword_new.getkeyword(i, j, get_keyword_new.keywords_dict))
-    df = pd.read_excel(path, sheet_name="Sheet1")
+    '''df = pd.read_excel(path, sheet_name="Sheet1")
     df['keyword_new'] = res
-    df.to_excel(path, sheet_name="Sheet1")
+    df.to_excel(path, sheet_name="Sheet1")'''
 
     #提取每条数据关键词词向量
-    data=load_data(path)
+    #data=load_data(path)
     print('开始提取')
     # 根据提取特征的方法获得词向量
-    output=getbert(data)
+    output=getbert(res)
     print('保存数据')
     np.savetxt("text_vectors_new.txt",output)
