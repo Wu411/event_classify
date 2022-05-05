@@ -3,7 +3,7 @@ from bert_serving.client import BertClient
 import jieba
 import numpy as np
 import re
-import tensorflow as tf
+
 
 #打开自定义词典
 with open("stopwords.txt", "r", encoding='utf-8') as f2:
@@ -19,7 +19,7 @@ with open("self_dict.txt", "r", encoding='utf-8') as f2:
 
 #对自定义词典进行自动更新
 def update_selfdict(path):
-    df = pd.read_excel(path, sheet_name="Sheet1")
+    df = pd.read_excel(path, sheet_name="event_group")
     data=df['description'].dropna().drop_duplicates().values.tolist()
     for i in data:
         spec_words = re.findall(r'([a-zA-Z][a-zA-Z0-9]+([-_.][a-zA-Z0-9]+)+)', i)
@@ -35,7 +35,7 @@ def update_selfdict(path):
 #获取各个类别的标签label并分词
 def get_group_keyword(path):
     update_selfdict(path)
-    df = pd.read_excel(path, sheet_name="Sheet1")
+    df = pd.read_excel(path, sheet_name="event_group")
     data = df.loc[:,['id','description']]
     group = data['id'].values.tolist()
     group_keyword={}
@@ -60,7 +60,7 @@ def get_bert(dict):
 
     tmp = [0 for i in range(768)]
     output,maxlen=fill(output,tmp)#将所有类别的标签label分词的词向量个数补齐
-
+    print(type(output))
     with open('group_label_bert.txt', 'w') as outfile:#将所有类别标签label分词的词向量存入文件
         for slice_2d in output:
             np.savetxt(outfile, slice_2d, delimiter=',')
@@ -79,14 +79,15 @@ def fill(list_args, fillvalue):#将不同类别标签label分词的词向量个�
         if len(my_list) < max_num:
             for i in range(max_num - len(my_list)):
                 my_list.append(fillvalue)
-        #my_list=np.array(my_list)
+        my_list=np.array(my_list)
         result.append(my_list)
+    result=np.array(result)
 
     return result,max_num
 
 if __name__ == "__main__":
     #当类别的标签发生变化时运行本程序
-    path = 'D:\\毕设数据\\数据\\event_event.xls'
+    path = 'D:\\毕设数据\\数据\\event_group.xls'
     #获取所有类别的标签label的分词结果的字典
     group_label_dict = get_group_keyword(path)
     #获取所有类别的标签label的分词结果的词向量

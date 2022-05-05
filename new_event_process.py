@@ -48,9 +48,9 @@ with open('group_label_bert_size.txt', 'r') as read:
         size = size.lstrip('(')
         size = size.rstrip(')')
         dim = size.split(', ')
-        dim1 = dim[0]
-        dim2 = dim[1]
-        dim3 = dim[2]
+        dim1 = int(dim[0])
+        dim2 = int(dim[1])
+        dim3 = int(dim[2])
 #打开数据总数、噪点数、噪点率表
 with open("noise_num.txt", "r", encoding='utf-8') as f4:
     tmp = f4.read()

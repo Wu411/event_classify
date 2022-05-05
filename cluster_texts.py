@@ -181,10 +181,10 @@ if __name__ == "__main__":
             size = size.lstrip('(')
             size = size.rstrip(')')
             dim = size.split(', ')
-            dim1 = dim[0]
-            dim2 = dim[1]
-            dim3 = dim[2]
-    group_label_bert = np.loadtxt('group_label_bert.txt', delimiter=',').reshape((dim1, dim2, dim3))
+            dim1 = int(dim[0])
+            dim2 = int(dim[1])
+            dim3 = int(dim[2])
+    group_label_bert = np.loadtxt('group_label_bert.txt', delimiter=',').reshape(dim1, dim2, dim3)
 
     #计算聚类中心或噪点数据向量
     clusters_center,noise_points=cul_culsters_center(feature,labels)

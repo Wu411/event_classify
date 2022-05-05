@@ -15,9 +15,9 @@ with open('group_label_bert_size.txt', 'r') as read:
         size = size.lstrip('(')
         size = size.rstrip(')')
         dim = size.split(', ')
-        dim1 = dim[0]
-        dim2 = dim[1]
-        dim3 = dim[2]
+        dim1 = int(dim[0])
+        dim2 = int(dim[1])
+        dim3 = int(dim[2])
 with open('group_threshold.txt','w') as f1:
     group_threshold=[]
     for i in f1.readlines():
