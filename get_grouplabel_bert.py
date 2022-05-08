@@ -3,7 +3,7 @@ from bert_serving.client import BertClient
 import jieba
 import numpy as np
 import re
-
+from get_bert import fixed_words
 
 #打开自定义词典
 with open("stopwords.txt", "r", encoding='utf-8') as f2:
@@ -19,8 +19,8 @@ with open("self_dict.txt", "r", encoding='utf-8') as f2:
 
 #对自定义词典进行自动更新
 def update_selfdict(path):
-    df = pd.read_excel(path, sheet_name="event_group")
-    data=df['description'].dropna().drop_duplicates().values.tolist()
+    df = pd.read_excel(path, sheet_name="工作表 1 - train")
+    data=df['group_name'].dropna().drop_duplicates().values.tolist()
     for i in data:
         spec_words = re.findall(r'([a-zA-Z][a-zA-Z0-9]+([-_.][a-zA-Z0-9]+)+)', i)
         for i in spec_words:
@@ -35,8 +35,8 @@ def update_selfdict(path):
 #获取各个类别的标签label并分词
 def get_group_keyword(path):
     update_selfdict(path)
-    df = pd.read_excel(path, sheet_name="event_group")
-    data = df.loc[:,['id','description']]
+    df = pd.read_excel(path, sheet_name="工作表 1 - train")
+    '''data = df.loc[:,['id','description']]
     group = data['id'].values.tolist()
     group_keyword={}
     jieba.load_userdict("self_dict.txt")
@@ -47,8 +47,23 @@ def get_group_keyword(path):
         for j in keywords:
             for k in jieba.lcut(j):
                 if k not in stopwords and k not in group_keyword[index]:
-                    group_keyword[index].append(k)
-
+                    group_keyword[index].append(k)'''
+    group_label=df['group_name'].dropna().drop_duplicates().values.tolist()
+    group_keyword = {}
+    jieba.load_userdict("self_dict.txt")
+    for i,j in enumerate(group_label):
+        group_keyword[i] = []
+        for word in jieba.lcut(j):
+            pattern = re.compile(r'((-?\d+)(\.\d+)?)')
+            if pattern.match(word) or len(word)<2:
+                continue
+            if word not in stopwords and word not in group_keyword[i]:
+                #fixed_words.insert(0,word)
+                group_keyword[i].append(word)
+    '''with open("fixed_keywords.txt", "w", encoding='utf-8') as f2:
+        for w in set(fixed_words):
+            f2.writelines(w)
+            f2.write('\n')'''
     return group_keyword
 
 def get_bert(dict):
@@ -60,7 +75,6 @@ def get_bert(dict):
 
     tmp = [0 for i in range(768)]
     output,maxlen=fill(output,tmp)#将所有类别的标签label分词的词向量个数补齐
-    print(type(output))
     with open('group_label_bert.txt', 'w') as outfile:#将所有类别标签label分词的词向量存入文件
         for slice_2d in output:
             np.savetxt(outfile, slice_2d, delimiter=',')
@@ -87,9 +101,19 @@ def fill(list_args, fillvalue):#将不同类别标签label分词的词向量个�
 
 if __name__ == "__main__":
     #当类别的标签发生变化时运行本程序
-    path = 'D:\\毕设数据\\数据\\event_group.xls'
+    path = 'D:\\毕设数据\\数据\\副本train3_增加groupname.xlsx'
     #获取所有类别的标签label的分词结果的字典
     group_label_dict = get_group_keyword(path)
     #获取所有类别的标签label的分词结果的词向量
     group_label_bert, maxlen = get_bert(group_label_dict)
+    df=pd.read_excel(path,sheet_name="工作表 1 - train")
+    '''group=df['group_num']
+    label_cut = []
+    for i in group:
+        if str(i)!='nan':
+            label_cut.append(group_label_dict[i])
+        else:
+            label_cut.append('')
+    df['label_cut'] = label_cut
+    df.to_excel(path, sheet_name="工作表 1 - train")'''
 

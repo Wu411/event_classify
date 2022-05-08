@@ -8,23 +8,17 @@ import matplotlib.pyplot as plt
 import similarity
 import get_grouplabel_bert
 import clusters_classify
-
+import tensorflow as tf
+import pandas as pd
+import schedule
 
 
 def cluster_center(X):
     kmeans = KMeans(n_clusters=1)
-    kmeans.fit(X)
+    kmeans.fit(np.array(X))
     # 获取质心
     return(kmeans.cluster_centers_)
 
-#计算相似度阈值
-def cul_clusters_threshold(center_pos,points):
-    min=1
-    for i in points:
-        s = similarity.cosSim(center_pos[0], i)
-        if s<min:
-            min=s
-    return min
 
 def update_dbscan(min_eps,max_eps,eps_step,min_min_samples,max_min_samples,min_samples_step):
     eps = np.arange(min_eps, max_eps, eps_step)  # eps参数从min_eps开始到max_eps，每隔eps_step进行一次
@@ -80,24 +74,15 @@ def cul_culsters_center(point_feature,point_labels):
         pos += 1
 
     clusters_center = {}#聚类中心向量字典
-    clusters_threshold={}#聚类相似度阈值字典
     for label, data in label_classify.items():
         if label != -1:
             center_pos = cluster_center(data)
-            threshold=cul_clusters_threshold(center_pos, data)#计算聚类相似度阈值
-            clusters_threshold[label]=threshold
-            clusters_center[label] = center_pos
-    #将所有聚类的相似度阈值写入文件
-    with open("clusters_threshold.txt", "w", encoding='utf-8') as f:
-        for cluster, threshold in clusters_threshold.items():
-            f.writelines(str(cluster) + ':' + str(threshold))
-            f.write('\n')
 
-    #将所有聚类的聚类中心向量写入文件
-    with open("clusters_center.txt", "w", encoding='utf-8') as f:
-        for label, center_pos in clusters_center.items():
-            f.writelines(str(label) + ':' + str(center_pos[0].tolist()))
-            f.write('\n')
+            clusters_center[label] = center_pos
+    if label_classify[-1]:
+        #将所有聚类的噪点向量写入文件
+        np.savetxt("noise_point.txt",label_classify[-1])
+
     return clusters_center,label_classify[-1]
 #可视化
 def plot_embedding_3d(X, target, num,title=None):
@@ -132,16 +117,20 @@ def plot_embedding_2d(data, labels, num,title=None):
 
 
 if __name__ == "__main__":
+
     #本程序用于对现有数据进行聚类及分类
 
-    feature = np.loadtxt("text_vectors_new.txt")
+    feature = np.loadtxt("text_vectors_new1.txt")
+    #feature = np.loadtxt("noise_point.txt")
     #print(feature.shape)
 
     #eps,min_samples=update_dbscan(0.2,2,0.1,2,10,1)
 
     #DBSCAN
+    best_score_eps,best_score_min_samples=update_dbscan(0.01,0.2,0.01,2,4,1)
+    print(best_score_eps,best_score_min_samples)
     start=time.clock()
-    DBS_clf = DBSCAN(eps=0.2, min_samples=2).fit(feature)
+    DBS_clf = DBSCAN(eps=best_score_eps, min_samples=best_score_min_samples).fit(feature)
     end = time.clock()
     print('Running time: %s Seconds' % (end - start))
     labels = DBS_clf.labels_  # 和X同一个维度，labels对应索引序号的值 为她所在簇的序号。若簇编号为-1，表示为噪声;
@@ -186,25 +175,59 @@ if __name__ == "__main__":
             dim3 = int(dim[2])
     group_label_bert = np.loadtxt('group_label_bert.txt', delimiter=',').reshape(dim1, dim2, dim3)
 
+    with open('group_threshold.txt','r') as f:
+        group_threshold=[]
+        for i in f.readlines():
+            i=i.strip('\n')
+            group_threshold.append(float(i))
+
     #计算聚类中心或噪点数据向量
     clusters_center,noise_points=cul_culsters_center(feature,labels)
+    key_list = tf.convert_to_tensor(np.asarray(group_label_bert).reshape(-1, dim2, 768))
     # 聚类成功相似度衡量
-    cluster_group_result,cluster_simi=clusters_classify.attention_get_bert(clusters_center,group_label_bert,True,dim2)
+    if clusters_center:
+        cluster_group_result=clusters_classify.attention_get_bert(clusters_center,key_list,group_threshold,True)
+        noise_keywords=[]
+        with open('noise_point_keywords.txt', 'r') as f:
+            for line in f.readlines():
+                tmp = line.strip('\n')
+                tmp = tmp.lstrip('[')
+                tmp = tmp.rstrip(']')
+                list=tmp.split(', ')
+                noise_keywords.append(list)
 
-    #聚类不成功相似度衡量
-    noise_group_result,noise_simi=clusters_classify.attention_get_bert(noise_points,group_label_bert,False,dim2)
+        keywords=[]
+        group=[]
+        clusters_id=[]
+        word_embedding=[]
+        num=0
+        for i,g in cluster_group_result.items():
+            num+=1
+            group.append(g)
+            for inx,j in labels:
+                if i==j:
+                    clusters_id.append(num)
+                    keywords.append(noise_keywords[inx])
+                    word_embedding.append(feature[inx].tolist())
+        df=pd.DataFrame({'cluster':clusters_id,'keywords':keywords,'group':group,'word_embedding':word_embedding})
+        path='D:\\毕设数据\\数据\\new_clusters_group.xlsx'
+        df.to_excel(path, sheet_name='Sheet1')
 
+    '''#聚类不成功相似度衡量
+    if noise_points:
+        noise_group_result=clusters_classify.attention_get_bert(noise_points,key_list,group_threshold,False)
+    
     #收集聚类与噪点的分类结果
-    event_cluster_result = {}
+    event_classify_result = {}
     similarity_result={}
     pos=0
     for i,j in enumerate(labels):
         if j != -1:
-            event_cluster_result[i] = cluster_group_result[j]
-            similarity_result[i] = cluster_simi[j]
+            event_classify_result[i] = cluster_group_result[j]
+            #similarity_result[i] = cluster_simi[j]
         else:
-            event_cluster_result[i] = noise_group_result[pos]
-            similarity_result[i] = noise_simi[pos]
+            event_classify_result[i] = noise_group_result[pos]
+            #similarity_result[i] = noise_simi[pos]
             pos+=1
 
     #将所有聚类的分类结果写入文件
@@ -212,6 +235,14 @@ if __name__ == "__main__":
         for cluster, group in cluster_group_result.items():
             f.writelines(str(cluster) + ':' + str(group))
             f.write('\n')
+    path='D:\\毕设数据\\数据\\副本train3_增加groupname.xlsx'
+    df = pd.read_excel(path, sheet_name='工作表 1 - train')
+    group = []
+    for k, v in event_classify_result.items():
+        group.append(v)
+    df['group'] = group
+    df['label'] = labels
+    df.to_excel(path, sheet_name="工作表 1 - train")'''
 
     '''
     print('start write')

@@ -3,13 +3,6 @@ import numpy as np
 import similarity
 import tensorflow as tf
 
-
-def cluster_center(X):
-    kmeans = KMeans(n_clusters=1)
-    kmeans.fit(X)
-    # 获取质心
-    return(kmeans.cluster_centers_)
-
 #注意力机制
 def attention(query,key_list):
 
@@ -17,24 +10,21 @@ def attention(query,key_list):
 
     return result
 
-def attention_get_bert(clusters_center,group_bert,flag,maxlen):
-    key_list = tf.convert_to_tensor(np.asarray(group_bert).reshape(-1, maxlen, 768))
+def attention_get_bert(clusters_center,key_list,group_threshold,flag):
     #聚类中心与各类别相似度衡量
     if flag==True:
         cluster_group_result = {}#聚类分类结果
-        cluster_simi = {}#聚类分类相似度结果
         num=0
         for center in clusters_center.values():
             query = tf.convert_to_tensor(np.asarray(center).reshape(1, 1, 768))
             result=attention(query,key_list)#利用注意力机制和中心向量得出的所有的类别代表向量
             with tf.Session() as sess:
                 result=result.eval()
-            groups_result,simi=cul_simlarity(center[0],result)#相似度衡量
+            groups_result = cul_simlarity(center[0],result,group_threshold)#相似度衡量
             index = list(clusters_center.keys())[num]
             cluster_group_result[index] = groups_result
-            cluster_simi[index] = simi
             num += 1
-        return cluster_group_result,cluster_simi
+        return cluster_group_result
     #噪点数据与各类别相似度衡量
     else:
         noise_group_result = []#噪点分类结果
@@ -45,26 +35,39 @@ def attention_get_bert(clusters_center,group_bert,flag,maxlen):
             result = attention(query, key_list)#利用注意力机制和噪点数据向量得出的所有的类别代表向量
             with tf.Session() as sess:
                 result = result.eval()
-            groups_result, simi = cul_simlarity(noise, result)#相似度衡量
+            groups_result = cul_simlarity(noise, result,group_threshold)#相似度衡量
             noise_group_result.append(groups_result)
-            noise_simi.append(simi)
+            #noise_simi.append(simi)
             num+=1
-        return noise_group_result,noise_simi
+        return noise_group_result
 
 #计算相似度及分类
-def cul_simlarity(center,group_bert):
-    groups_result=[]
-    score=[]
-    for i in group_bert:
+def cul_simlarity(center,group_bert,group_threshold):
+    groups_result={}
+    res=[]
+    group=0
+    for i,j in zip(group_bert,group_threshold):
         s = similarity.cosSim(center, i[0])
-        score.append(s)
-    max_score = max(score)
+        if s >= j:
+            groups_result[group]=s
+        group += 1
+    if groups_result.keys():
+        tmp=dict(sorted(groups_result.items(),key=lambda x: x[1]))
+        num=0
+        for i in tmp.keys():
+            num+=1
+            if num<=5:
+                res.append(i)
+            else:
+                break
+    '''max_score = max(score)
     simi = max_score
     for i, x in enumerate(score):
         if x == max_score:
             group = i
-            groups_result.append(group)
-    return groups_result,simi
+            groups_result.append(group)'''
+    return list(groups_result.keys())
+
 
 
 

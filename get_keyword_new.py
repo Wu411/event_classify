@@ -3,39 +3,12 @@ import pandas as pd
 import jieba
 from urllib import parse
 
-#打开关键词词典
-with open("all_tfidf_dict.txt", "r", encoding='utf-8') as f:
-    keywords_dict=[]
-    for line in f.readlines():
-        line=line.strip('\n')
-        x=line.split()
-        keywords_dict.append(x[0])
 
-#打开固定关键词文件
-with open("fixed_keywords.txt", "r", encoding='utf-8') as f2:
-    fixed_words=[]
-    for line in f2.readlines():
-        word=line.strip('\n')
-        fixed_words.append(word)
 
-#打开自定义词典
-with open("self_dict.txt", "r", encoding='utf-8') as f1:
-    self_dict = []
-    for line in f1.readlines():
-        word = line.strip('\n')
-        self_dict.append(word)
-
-#打开主机名文件
-with open("host_name.txt", "r", encoding='utf-8') as f2:
-    host_name = []
-    for line in f2.readlines():
-        word = line.strip('\n')
-        host_name.append(word)
-
-def load_data(path):
+def load_data(path,host_name,fixed_words,self_dict):
     # 导入需要读取Excel表格的路径
-    df = pd.read_excel(path,sheet_name = "Sheet1")
-    data=df['SUMMARY'].values.tolist()
+    df = pd.read_excel(path,sheet_name = "工作表 1 - train")
+    data=df['Summary'].values.tolist()
     summary = []
     fixkeyword=[]
     for v in data:
@@ -49,7 +22,16 @@ def load_data(path):
             if v.find(word)!=-1:
                 beg=v.find(word)
                 end=beg+len(word)-1
-                if not v[beg-1].isalnum() and not v[end+1].isalnum() and v[beg-1] not in ['_','-'] and v[end+1] not in ['_','-']:
+                if beg == 0 and end == len(v) - 1:
+                    v = v.replace(word, ' ')
+                    tmp.append(word)
+                elif beg ==0 and not v[end+1].isalnum() and v[end+1] not in ['_','-']:
+                    v = v.replace(word, ' ')
+                    tmp.append(word)
+                elif end==len(v)-1 and not v[beg-1].isalnum() and v[beg-1] not in ['_','-']:
+                    v = v.replace(word, ' ')
+                    tmp.append(word)
+                elif not v[beg-1].isalnum() and not v[end+1].isalnum() and v[beg-1] not in ['_','-'] and v[end+1] not in ['_','-']:
                     v=v.replace(word,' ')
                     tmp.append(word)
         fixkeyword.append(tmp)
@@ -60,12 +42,12 @@ def load_data(path):
         v = v.replace("请联系数据库岗处理", " ")
         v = v.replace("处理", " ")
         v = v.replace("hostname", " ")
-        k = format_str(v)#正则表达式处理
+        k = format_str(v,self_dict)#正则表达式处理
         k = k.replace("DATE", " ")
         k = k.replace("code", " ")
         k = k.replace("symbol", " ")
         k = k.replace("TIME", " ")
-        k = k.replace("NUMBER", " ")
+        #k = k.replace("NUMBER", " ")
         k = k.replace("path", " ")
         k = k.replace("url", " ")
         k = k.replace("DOMAIN", " ")
@@ -77,7 +59,7 @@ def load_data(path):
             f.write('\n')
     return summary,fixkeyword
 
-def format_str(tmp_txt):
+def format_str(tmp_txt,self_dict):
     tmp_txt = re.sub(r'\d{4}-\d{1,2}-\d{1,2}', 'DATE', tmp_txt)
     tmp_txt = re.sub(r'\d{4}/\d{1,2}/\d{1,2}', 'DATE', tmp_txt)
     tmp_txt = re.sub(r'\d{1,2}/[a-zA-Z]{3}/\d{4}', 'DATE', tmp_txt)
@@ -89,7 +71,7 @@ def format_str(tmp_txt):
     tmp_txt = re.sub(r'\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*', 'Email', tmp_txt)
     update_selfdict(tmp_txt,self_dict)#动态更新自定义词典，加入以下划线和连字符连接的词组
     tmp_txt = re.sub(r'[A-Za-z0-9]{20,}', 'code', tmp_txt)
-    tmp_txt = re.sub(r'(-?\d+)(\.\d+)?', 'NUMBER', tmp_txt)
+    #tmp_txt = re.sub(r'(-?\d+)(\.\d+)?', 'NUMBER', tmp_txt)
     tmp_txt = re.sub(r'[^\u4e00-\u9fa5A-Za-z0-9]{2,}', 'symbol', tmp_txt)
 
     return tmp_txt
@@ -98,18 +80,22 @@ def getkeyword(fixkeyword,string,keywords_dict):
     jieba.load_userdict("self_dict.txt")#使用自定义词典
     seg_list=jieba.lcut(string)
     res=[]
+    weight=[]
     num=0
     #选出前十个关键词
+    wei=float(list(keywords_dict.values())[0])
     for i in fixkeyword:
         if i not in res:
             res.append(i)
-    for j in keywords_dict:
+            weight.append(wei)
+    for k,v in keywords_dict.items():
         if num == 10-len(fixkeyword):
             break
-        if j in seg_list and j not in res:
-            res.append(j)
+        if k.strip('\'') in seg_list and k.strip('\'') not in res:
+            weight.append(float(v))
+            res.append(k.strip('\''))
             num+=1
-    return res
+    return res,weight
 
 def update_selfdict(txt,res):#将下划线和连字符所连固定搭配动态加入自定义词典
     spec_words = re.findall(r'([a-zA-Z][a-zA-Z0-9]+([-_][a-zA-Z0-9]+)+)', txt)
