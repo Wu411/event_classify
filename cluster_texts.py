@@ -206,6 +206,11 @@ if __name__ == "__main__":
                 tmp = tmp.rstrip(']')
                 list=tmp.split(', ')
                 noise_keywords.append(list)
+        noise_summary=[]
+        with open('noise_point_summary.txt', 'r') as f:
+            for line in f.readlines():
+                tmp = line.strip('\n')
+                noise_summary.append(tmp)
 
         keywords=[]
         group=[]
@@ -220,7 +225,7 @@ if __name__ == "__main__":
                     clusters_id.append(num)
                     keywords.append(noise_keywords[inx])
                     word_embedding.append(feature[inx].tolist())
-        df=pd.DataFrame({'cluster':clusters_id,'keywords':keywords,'group':group,'word_embedding':word_embedding})
+        df=pd.DataFrame({'cluster':clusters_id,'summary':noise_summary,'keywords':keywords,'group':group,'word_embedding':word_embedding})
         path='D:\\毕设数据\\数据\\new_clusters_group.xlsx'
         df.to_excel(path, sheet_name='Sheet1')
 

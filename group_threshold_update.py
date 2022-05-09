@@ -47,10 +47,10 @@ def load_correct_event_classify(path):
     for cluster in cluster_num:
         if cluster==-1:
             continue
-        clutser_groups_num=df.loc[df['cluster']==cluster]['cluster_id'].drop_duplicates().values.tolist()#获取各个新聚类中包含的所有group结果
+        clutser_groups_num=df.loc[df['cluster']==cluster]['group_num'].drop_duplicates().values.tolist()#获取各个新聚类中包含的所有group结果
         for group_num in clutser_groups_num:
             cluster_group.append(group_num)
-            tmp=df.loc[(df['cluster_id']==group_num)&df['cluster']==cluster]['word_embedding'].values.tolist()#对各个新聚类按照的group重新划分，一个新聚类可能形成多个新聚类
+            tmp=df.loc[(df['group_num']==group_num)&df['cluster']==cluster]['word_embedding'].values.tolist()#对各个新聚类按照的group重新划分，一个新聚类可能形成多个新聚类
             res=[]
             for i in tmp:
                 i = i.lstrip('[')

@@ -51,7 +51,7 @@ groups_label_bert = np.loadtxt('group_label_bert.txt', delimiter = ',').reshape(
 
 #获取新数据词向量
 def new_event_getbert(path):
-    summary, fixkeyword = load_data(path)  # 读取并处理数据summary
+    summary, data = load_data(path)  # 读取并处理数据summary
     # 获取每条数据关键词
     res_words = []
     res_weights = []
@@ -60,7 +60,7 @@ def new_event_getbert(path):
         res_words.append(words)
         res_weights.append(weights)
     output = getbert(res_words,res_weights)
-    return output,res_words
+    return output,res_words,data
 
 #噪点数据相似度衡量及分类
 def noise_process(noise_point,key_list):
@@ -129,19 +129,23 @@ if __name__=="__main__":
 
     #获取新数据词向量并将其加入到现有数据的词向量表中
     path='D:\\毕设数据\\数据\\副本train3_增加groupname.xlsx'
-    feature,events_keywords=new_event_getbert(path)
+    feature,events_keywords,events_summary=new_event_getbert(path)
 
     #对新数据进行分类并获取分类结果以及对应的处理方法
     event_group_num,noise_keyword=event_classify(feature,noise_num,events_keywords)
     solutions=event_solution(event_group_num)
-    #将处理方法写入新事件表中
+    '''#将处理方法写入新事件表中
     df = pd.read_excel(path, sheet_name="工作表 1 - train")
     df['solutions']=solutions
-    df.to_excel(path,sheet_name="工作表 1 - train")
+    df.to_excel(path,sheet_name="工作表 1 - train")'''
 
     with open('noise_point_keywords.txt','a') as f:
         for point_keywords in noise_keyword:
             f.writelines(str(point_keywords))
+            f.write('\n')
+    with open('noise_point_summary.txt','a') as f:
+        for point_summary in events_summary:
+            f.writelines(point_summary)
             f.write('\n')
     #获取新的噪点数据数量及噪点率
     all_num = all_num+len(feature)

@@ -58,7 +58,7 @@ def load_data(path,host_name,fixed_words,self_dict):
         for i in self_dict:
             f.writelines(i)
             f.write('\n')
-    return summary,fixkeyword
+    return summary,data
 
 def format_str(tmp_txt,self_dict):
     tmp_txt = re.sub(r'\d{4}-\d{1,2}-\d{1,2}', 'DATE', tmp_txt)

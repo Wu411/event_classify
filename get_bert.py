@@ -67,7 +67,7 @@ if __name__ == "__main__":
     # 读取处理数据
     path='D:\\毕设数据\\数据\\副本train3_增加groupname.xlsx'
     print('数据预处理')
-    summary, fixkeyword = get_keyword_new.load_data(path,host_name,fixed_words,self_dict)  # 读取并处理数据summary
+    summary, data = get_keyword_new.load_data(path,host_name,fixed_words,self_dict)  # 读取并处理数据summary
 
     print('数据预处理完成')
     print("开始获取数据关键词")
