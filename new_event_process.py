@@ -55,8 +55,8 @@ def new_event_getbert(path):
     # 获取每条数据关键词
     res_words = []
     res_weights = []
-    for i, j in zip(fixkeyword, summary):
-        words, weights = getkeyword(i, j, keywords_dict)
+    for j in summary:
+        words, weights = getkeyword(j, keywords_dict)
         res_words.append(words)
         res_weights.append(weights)
     output = getbert(res_words,res_weights)
