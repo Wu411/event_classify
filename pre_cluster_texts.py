@@ -171,7 +171,7 @@ if __name__ == "__main__":
 
     path = 'D:\\毕设数据\\数据\\副本train3_增加groupname.xlsx'
     df = pd.read_excel(path, sheet_name='工作表 1 - train')
-    df['label'] = labels
+    df['cluster'] = labels
     df['word_embedding']=feature.tolist()
     df.to_excel(path, sheet_name="工作表 1 - train")
 

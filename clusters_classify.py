@@ -66,7 +66,7 @@ def cul_simlarity(center,group_bert,group_threshold):
         if x == max_score:
             group = i
             groups_result.append(group)'''
-    return list(groups_result.keys())
+    return res
 
 
 

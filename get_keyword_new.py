@@ -5,7 +5,7 @@ from urllib import parse
 
 
 
-def load_data(path,host_name,fixed_words,self_dict):
+def load_data(path,self_dict):
     # 导入需要读取Excel表格的路径
     df = pd.read_excel(path,sheet_name = "工作表 1 - train")
     data=df['Summary'].values.tolist()
@@ -48,7 +48,7 @@ def load_data(path,host_name,fixed_words,self_dict):
         k = k.replace("code", " ")
         k = k.replace("symbol", " ")
         k = k.replace("TIME", " ")
-        #k = k.replace("NUMBER", " ")
+        k = k.replace("NUMBER", " ")
         k = k.replace("path", " ")
         k = k.replace("url", " ")
         k = k.replace("DOMAIN", " ")
@@ -72,7 +72,7 @@ def format_str(tmp_txt,self_dict):
     tmp_txt = re.sub(r'\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*', 'Email', tmp_txt)
     update_selfdict(tmp_txt,self_dict)#动态更新自定义词典，加入以下划线和连字符连接的词组
     tmp_txt = re.sub(r'[A-Za-z0-9]{20,}', 'code', tmp_txt)
-    #tmp_txt = re.sub(r'(-?\d+)(\.\d+)?', 'NUMBER', tmp_txt)
+    tmp_txt = re.sub(r'(-?\d+)(\.\d+)?', 'NUMBER', tmp_txt)
     tmp_txt = re.sub(r'[^\u4e00-\u9fa5A-Za-z0-9]{2,}', 'symbol', tmp_txt)
 
     return tmp_txt
@@ -96,7 +96,7 @@ def getkeyword(string,keywords_dict):
             weight.append(float(v))
             res.append(k.strip('\''))
             num+=1
-    return res,weight,seg_list
+    return res,weight
 
 def update_selfdict(txt,res):#将下划线和连字符所连固定搭配动态加入自定义词典
     spec_words = re.findall(r'([a-zA-Z][a-zA-Z0-9]+([-_][a-zA-Z0-9]+)+)', txt)

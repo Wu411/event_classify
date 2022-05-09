@@ -67,7 +67,7 @@ if __name__ == "__main__":
     # 读取处理数据
     path='D:\\毕设数据\\数据\\副本train3_增加groupname.xlsx'
     print('数据预处理')
-    summary, data = get_keyword_new.load_data(path,host_name,fixed_words,self_dict)  # 读取并处理数据summary
+    summary, data = get_keyword_new.load_data(path,host_name)  # 读取并处理数据summary
 
     print('数据预处理完成')
     print("开始获取数据关键词")
@@ -76,7 +76,7 @@ if __name__ == "__main__":
     res_weights = []
     seg_lists=[]
     for j in summary:
-        words,weights,seg_list=get_keyword_new.getkeyword(j, keywords_dict)
+        words,weights=get_keyword_new.getkeyword(j, keywords_dict)
         res_words.append(words)
         res_weights.append(weights)
     print("数据关键词获取结束")

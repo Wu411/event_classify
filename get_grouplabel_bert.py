@@ -53,8 +53,9 @@ def get_group_keyword(path):
     for i,j in enumerate(group_label):
         group_keyword[i] = []
         for word in jieba.lcut(j):
+            dig=re.compile(r'((-?\d+)(\.\d+)?)')
             test = re.compile(r'\W+')
-            if test.match(word):
+            if test.match(word) or dig.match(word):
                 continue
             if word not in group_keyword[i]:
                 #fixed_words.insert(0,word)
