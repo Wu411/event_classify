@@ -2,26 +2,37 @@ from collections import defaultdict
 import math
 import operator
 import jieba
-from jieba import analyse
 import pandas as pd
+import re
 
+#打开自定义词典
+with open("self_dict.txt", "r", encoding='utf-8') as f2:
+    self_dict = []
+    for line in f2.readlines():
+        word = line.strip('\n')
+        self_dict.append(word)
+
+def update_selfdict(txt,res):#将下划线和连字符所连固定搭配动态加入自定义词典
+    spec_words = re.findall(r'([a-zA-Z][a-zA-Z0-9]+([-_][a-zA-Z0-9]+)+)', txt)
+    for i in spec_words:
+        if i[0] not in res:
+            res.append(i[0])
+    return res
 
 def loadDataSet():
-    with open("stopwords.txt", "r", encoding='utf-8') as f2:
-        stopwords = []
-        for line in f2.readlines():
-            word = line.strip('\n')
-            stopwords.append(word)
     df = pd.read_excel('D:\\毕设数据\\数据\\副本train3_增加groupname.xlsx', sheet_name="工作表 1 - train")
     tmp = df['group_name'].dropna().drop_duplicates().values.tolist()
+    for i in tmp:
+        update_selfdict(i,self_dict)
     jieba.load_userdict("self_dict.txt")
     dataset = []
+    test=re.compile(r'\W+')
     for w in tmp:
         l=[]
         for j in jieba.lcut(w):
-            l.append(j)
+            if not test.match(j):
+                l.append(j.casefold())
         dataset.append(l)
-    print(dataset)
     return dataset
 
 

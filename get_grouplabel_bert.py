@@ -3,7 +3,6 @@ from bert_serving.client import BertClient
 import jieba
 import numpy as np
 import re
-from get_bert import fixed_words
 
 #打开自定义词典
 with open("stopwords.txt", "r", encoding='utf-8') as f2:
@@ -54,12 +53,12 @@ def get_group_keyword(path):
     for i,j in enumerate(group_label):
         group_keyword[i] = []
         for word in jieba.lcut(j):
-            pattern = re.compile(r'((-?\d+)(\.\d+)?)')
-            if pattern.match(word) or len(word)<2:
+            test = re.compile(r'\W+')
+            if test.match(word):
                 continue
-            if word not in stopwords and word not in group_keyword[i]:
+            if word not in group_keyword[i]:
                 #fixed_words.insert(0,word)
-                group_keyword[i].append(word)
+                group_keyword[i].append(word.casefold())
     '''with open("fixed_keywords.txt", "w", encoding='utf-8') as f2:
         for w in set(fixed_words):
             f2.writelines(w)
@@ -107,7 +106,7 @@ if __name__ == "__main__":
     #获取所有类别的标签label的分词结果的词向量
     group_label_bert, maxlen = get_bert(group_label_dict)
     df=pd.read_excel(path,sheet_name="工作表 1 - train")
-    '''group=df['group_num']
+    group=df['group_num']
     label_cut = []
     for i in group:
         if str(i)!='nan':
@@ -115,5 +114,5 @@ if __name__ == "__main__":
         else:
             label_cut.append('')
     df['label_cut'] = label_cut
-    df.to_excel(path, sheet_name="工作表 1 - train")'''
+    df.to_excel(path, sheet_name="工作表 1 - train")
 
