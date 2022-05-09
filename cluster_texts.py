@@ -19,6 +19,14 @@ def cluster_center(X):
     # 获取质心
     return(kmeans.cluster_centers_)
 
+#计算相似度阈值
+def cul_clusters_threshold(center_pos,points):
+    min=1
+    for i in points:
+        s = similarity.cosSim(center_pos[0], i)
+        if s<min:
+            min=s
+    return min
 
 def update_dbscan(min_eps,max_eps,eps_step,min_min_samples,max_min_samples,min_samples_step):
     eps = np.arange(min_eps, max_eps, eps_step)  # eps参数从min_eps开始到max_eps，每隔eps_step进行一次
@@ -74,11 +82,13 @@ def cul_culsters_center(point_feature,point_labels):
         pos += 1
 
     clusters_center = {}#聚类中心向量字典
+    clusters_threshold={}#聚类相似度阈值字典
     for label, data in label_classify.items():
         if label != -1:
             center_pos = cluster_center(data)
 
             clusters_center[label] = center_pos
+
     if label_classify[-1]:
         #将所有聚类的噪点向量写入文件
         np.savetxt("noise_point.txt",label_classify[-1])
@@ -120,17 +130,18 @@ if __name__ == "__main__":
 
     #本程序用于对现有数据进行聚类及分类
 
-    feature = np.loadtxt("text_vectors_new1.txt")
-    #feature = np.loadtxt("noise_point.txt")
+    #feature = np.loadtxt("text_vectors_new1.txt")
+    feature = np.loadtxt("noise_point.txt")
     #print(feature.shape)
 
     #eps,min_samples=update_dbscan(0.2,2,0.1,2,10,1)
 
     #DBSCAN
-    best_score_eps,best_score_min_samples=update_dbscan(0.01,0.2,0.01,2,4,1)
-    print(best_score_eps,best_score_min_samples)
+    #best_score_eps,best_score_min_samples=update_dbscan(0.01,0.2,0.01,2,4,1)
+    #with open('dbscan.txt','w') as db:
+    #    db.write(str(best_score_eps)+' '+str(best_score_min_samples))
     start=time.clock()
-    DBS_clf = DBSCAN(eps=best_score_eps, min_samples=best_score_min_samples).fit(feature)
+    DBS_clf = DBSCAN(eps=0.01, min_samples=2).fit(feature)
     end = time.clock()
     print('Running time: %s Seconds' % (end - start))
     labels = DBS_clf.labels_  # 和X同一个维度，labels对应索引序号的值 为她所在簇的序号。若簇编号为-1，表示为噪声;
@@ -229,22 +240,13 @@ if __name__ == "__main__":
             event_classify_result[i] = noise_group_result[pos]
             #similarity_result[i] = noise_simi[pos]
             pos+=1
-
-    #将所有聚类的分类结果写入文件
-    with open("clusters_group.txt", "w", encoding='utf-8') as f:
-        for cluster, group in cluster_group_result.items():
-            f.writelines(str(cluster) + ':' + str(group))
-            f.write('\n')
+    
     path='D:\\毕设数据\\数据\\副本train3_增加groupname.xlsx'
     df = pd.read_excel(path, sheet_name='工作表 1 - train')
-    group = []
-    for k, v in event_classify_result.items():
-        group.append(v)
-    df['group'] = group
     df['label'] = labels
-    df.to_excel(path, sheet_name="工作表 1 - train")'''
+    df.to_excel(path, sheet_name="工作表 1 - train")
 
-    '''
+
     print('start write')
     path1 = 'D:\\毕设数据\\数据\\监控事件_202201.xlsx'
     path2 = 'D:\\毕设数据\\数据\\event_group.xls'

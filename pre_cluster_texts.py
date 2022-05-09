@@ -138,8 +138,6 @@ if __name__ == "__main__":
     # 本程序用于对现有数据进行聚类及分类
 
     feature = np.loadtxt("text_vectors_new1.txt")
-    # feature = np.loadtxt("noise_point.txt")
-    # print(feature.shape)
 
     # eps,min_samples=update_dbscan(0.2,2,0.1,2,10,1)
 
