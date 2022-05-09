@@ -38,13 +38,15 @@ def cul_clusters_threshold(center_pos,points):
 
 #更新新聚类的中心向量及其对应的group
 def load_correct_event_classify(path):
-    df=pd.read_excel('path', sheet_name='Sheet1')
+    df=pd.read_excel('path', sheet_name='工作表 1 - train')
     cluster_num=df['cluster'].values.tolist()#获取更正后的新聚类的分类结果
     # 获取新聚类中心向量
     centers_pos=[]
     clusters_threshold=[]
     cluster_group=[]
     for cluster in cluster_num:
+        if cluster==-1:
+            continue
         clutser_groups_num=df.loc[df['cluster']==cluster]['cluster_id'].drop_duplicates().values.tolist()#获取各个新聚类中包含的所有group结果
         for group_num in clutser_groups_num:
             cluster_group.append(group_num)
@@ -96,7 +98,7 @@ def cul_group_threshold(cluster_group,centers,keys_list,group_threshold):
     return group_threshold
 
 if __name__=="__name__":
-    path = 'D:\\毕设数据\\数据\\new_clusters_group.xlsx'
+    path = 'D:\\毕设数据\\数据\\副本train3_增加groupname.xlsx'
     centers_pos,new_groups_num=load_correct_event_classify(path)
     key_list=tf.convert_to_tensor(groups_label_bert)
     group_threshold=cul_group_threshold(new_groups_num,centers_pos,key_list,group_threshold)
