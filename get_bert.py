@@ -43,14 +43,17 @@ def getbert(data,weight):
     start = time.clock()
     for seg_list,wei_list in zip(data,weight):
         num += 1
-        bc = BertClient()
-        new = []
-        vector = bc.encode(seg_list)
-        for i in range(768):
-            temp = 0
-            for j in range(len(vector)):
-                temp += vector[j][i]*wei_list[j]
-            new.append(temp / (len(vector)))
+        if seg_list:
+            bc = BertClient()
+            new = []
+            vector = bc.encode(seg_list)
+            for i in range(768):
+                temp = 0
+                for j in range(len(vector)):
+                    temp += vector[j][i]*wei_list[j]
+                new.append(temp / (len(vector)))
+        else:
+            new=[0 for i in range(768)]
         output.append(new)
         print('完成提取：', num)
     end = time.clock()
@@ -63,7 +66,7 @@ if __name__ == "__main__":
     # 读取处理数据
     path='D:\\毕设数据\\数据\\副本train3_增加groupname.xlsx'
     print('数据预处理')
-    summary, data = get_keyword_new.load_data(path,host_name)  # 读取并处理数据summary
+    '''summary, data = get_keyword_new.load_data(path,host_name)  # 读取并处理数据summary
 
     print('数据预处理完成')
     print("开始获取数据关键词")
@@ -78,13 +81,31 @@ if __name__ == "__main__":
     print("数据关键词获取结束")
     df = pd.read_excel(path, sheet_name="工作表 1 - train")
     df['keyword_new'] = res_words
-    df.to_excel(path, sheet_name="工作表 1 - train")
+    df.to_excel(path, sheet_name="工作表 1 - train")'''
+    df = pd.read_excel(path, sheet_name="工作表 1 - train")
+    events_keywords = df['keyword_new'].values.tolist()
+    keys = df['keyword_new'].drop_duplicates().values.tolist()
+    res_words = []
+    res_weights = []
+    for i in keys:
+        i=i.lstrip('[')
+        i=i.rstrip(']')
+        words=i.split(', ')
+        weights=[]
+        for j in words:
+            weights.append(float(keywords_dict[j.strip('\'')]))
+        res_words.append(words)
+        res_weights.append(weights)
+    print('开始提取')
+    output = getbert(res_words, res_weights)
+    feature=[]
+    emebdding_dict=dict(keys,output)
+    for event in events_keywords:
+        feature.append(emebdding_dict[event])
 
     #提取每条数据关键词词向量
     #data=load_data(path)
-    print('开始提取')
     # 根据提取特征的方法获得词向量
-    output=getbert(res_words,res_weights)
     print('保存数据')
-    np.savetxt("text_vectors_new1.txt",output)
+    np.savetxt("text_vectors_new1.txt",feature)
     #os.system('pre_cluster_texts.py')
