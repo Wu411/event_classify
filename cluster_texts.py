@@ -28,10 +28,10 @@ def cul_clusters_threshold(center_pos,points):
             min=s
     return min
 
-def update_dbscan(min_eps,max_eps,eps_step,min_min_samples,max_min_samples,min_samples_step):
+def update_dbscan(min_eps,max_eps,eps_step,min_min_samples,max_min_samples,min_samples_step,feature):
     eps = np.arange(min_eps, max_eps, eps_step)  # eps参数从min_eps开始到max_eps，每隔eps_step进行一次
     min_samples = np.arange(min_min_samples, max_min_samples, min_samples_step)  # min_samples参数从min_min_samples开始到max_min_samples,每隔min_samples_step进行一次
-    best_score = 0
+    best_score = 1
     best_score_eps = 0
     best_score_min_samples = 0
     for i in eps:
@@ -47,14 +47,13 @@ def update_dbscan(min_eps,max_eps,eps_step,min_min_samples,max_min_samples,min_s
                 # labels=-1的个数除以总数，计算噪声点个数占总数的比例
                 n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)  # 获取分簇的数目
                 k = metrics.silhouette_score(feature, labels)
-                score = k - raito
-                if score > best_score:
+                score =  raito
+                if score < best_score:
                     best_score = score
                     best_score_eps = i
                     best_score_min_samples = j
             except:
                 DBS_clf = ''
-
     DBS_clf = DBSCAN(eps=best_score_eps, min_samples=best_score_min_samples).fit(feature)
     labels = DBS_clf.labels_  # 和X同一个维度，labels对应索引序号的值 为她所在簇的序号。若簇编号为-1，表示为噪声;
     raito_num = 0
@@ -132,16 +131,17 @@ if __name__ == "__main__":
 
     #feature = np.loadtxt("text_vectors_new1.txt")
     feature = np.loadtxt("noise_point.txt")
+
     #print(feature.shape)
 
     #eps,min_samples=update_dbscan(0.2,2,0.1,2,10,1)
 
     #DBSCAN
-    #best_score_eps,best_score_min_samples=update_dbscan(0.01,0.2,0.01,2,4,1)
+    best_score_eps,best_score_min_samples=update_dbscan(0,5,0.1,2,4,1,feature)
     #with open('dbscan.txt','w') as db:
     #    db.write(str(best_score_eps)+' '+str(best_score_min_samples))
     start=time.clock()
-    DBS_clf = DBSCAN(eps=0.01, min_samples=2).fit(feature)
+    DBS_clf = DBSCAN(eps=best_score_eps, min_samples=best_score_min_samples).fit(feature)
     end = time.clock()
     print('Running time: %s Seconds' % (end - start))
     labels = DBS_clf.labels_  # 和X同一个维度，labels对应索引序号的值 为她所在簇的序号。若簇编号为-1，表示为噪声;
@@ -175,6 +175,7 @@ if __name__ == "__main__":
     #group_label_bert,maxlen = get_grouplabel_bert.get_bert(group_label_dict)
 
     #获取所有类别的标签label的分词结果的词向量
+
     with open('group_label_bert_size.txt', 'r') as read:
         for size in read.readlines():
             size = size.strip('\n')
@@ -198,6 +199,7 @@ if __name__ == "__main__":
     # 聚类成功相似度衡量
     if clusters_center:
         cluster_group_result=clusters_classify.attention_get_bert(clusters_center,key_list,group_threshold,True)
+
         noise_keywords=[]
         with open('noise_point_keywords.txt', 'r') as f:
             for line in f.readlines():
@@ -216,16 +218,18 @@ if __name__ == "__main__":
         group=[]
         clusters_id=[]
         word_embedding=[]
+        summary=[]
         num=0
         for i,g in cluster_group_result.items():
             num+=1
-            group.append(g)
-            for inx,j in labels:
+            for inx,j in enumerate(labels):
                 if i==j:
+                    group.append(g)
                     clusters_id.append(num)
                     keywords.append(noise_keywords[inx])
                     word_embedding.append(feature[inx].tolist())
-        df=pd.DataFrame({'cluster':clusters_id,'summary':noise_summary,'keywords':keywords,'group':group,'word_embedding':word_embedding})
+                    summary.append(noise_summary[inx])
+        df=pd.DataFrame({'cluster':clusters_id,'summary':summary,'keywords':keywords,'group':group,'word_embedding':word_embedding})
         path='D:\\毕设数据\\数据\\new_clusters_group.xlsx'
         df.to_excel(path, sheet_name='Sheet1')
 

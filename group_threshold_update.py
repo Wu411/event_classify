@@ -3,7 +3,7 @@ import numpy as np
 import tensorflow as tf
 import similarity
 from cluster_texts import cluster_center
-
+import os
 #打开类别标签维度表
 with open('group_label_bert_size.txt', 'r') as read:
     for size in read.readlines():
@@ -93,3 +93,4 @@ if __name__=="__main__":
     with open('group_threshold.txt','w') as f:
         for i in group_threshold:
             f.writelines(str(i)+'\n')
+    os.system('test.py')

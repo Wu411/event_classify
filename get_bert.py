@@ -5,6 +5,7 @@ from bert_serving.client import BertClient
 import pandas as pd
 import numpy as np
 import get_keyword_new
+import os
 
 config_path = 'chinese_L-12_H-768_A-12/bert_config.json'
 checkpoint_path = 'chinese_L-12_H-768_A-12/bert_model.ckpt'
@@ -20,12 +21,7 @@ with open("new_all_tfidf_dict.txt", "r", encoding='utf-8') as f:
         x=line.split(' ')
         keywords_dict[x[0]]=x[1]
 
-#打开固定关键词文件
-with open("fixed_keywords.txt", "r", encoding='utf-8') as f2:
-    fixed_words=[]
-    for line in f2.readlines():
-        word=line.strip('\n')
-        fixed_words.append(word)
+
 
 #打开自定义词典
 with open("self_dict.txt", "r", encoding='utf-8') as f1:
@@ -91,3 +87,4 @@ if __name__ == "__main__":
     output=getbert(res_words,res_weights)
     print('保存数据')
     np.savetxt("text_vectors_new1.txt",output)
+    os.system('pre_cluster_texts.py')

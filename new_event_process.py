@@ -76,7 +76,7 @@ def noise_process(noise_point,key_list):
     return groups_result
 
 #新数据分类
-def event_classify(event_bert,noise_num):
+def event_classify(event_bert,noise_num,events_keywords):
     res=[]
     cluster_id = []
     noise_point=[]
@@ -105,7 +105,7 @@ def event_classify(event_bert,noise_num):
         else:#未找到所属聚类，按噪点数据分类处理
             noise_num+=1
             noise_point.append(new)
-            #noise_keyword.append(events_keywords[index])
+            noise_keyword.append(events_keywords[index])
             group_num = noise_process(new,key_list)
             res.append(group_num)
             cluster_id.append(-1)
@@ -113,7 +113,7 @@ def event_classify(event_bert,noise_num):
         with open('noise_point.txt', 'a') as f:
             np.savetxt(f,noise_point)
 
-    return res,noise_keyword,cluster_id
+    return res,noise_keyword,noise_keyword
 
 #获取新事件处理方案
 def event_solution(event_group_num):
@@ -136,23 +136,22 @@ if __name__=="__main__":
 
     #获取新数据词向量并将其加入到现有数据的词向量表中
     path='D:\\毕设数据\\数据\\副本train3_增加groupname.xlsx'
-    #feature,events_keywords,events_summary=new_event_getbert(path)
-    feature = np.loadtxt("text_vectors_new1.txt")
+    feature,events_keywords,events_summary=new_event_getbert(path)
+    #feature = np.loadtxt("text_vectors_new1.txt")
     #对新数据进行分类并获取分类结果以及对应的处理方法
-    event_group_num,noise_keyword,cluster_id=event_classify(feature,noise_num)
+    event_group_num,noise_keyword,noise_summary=event_classify(feature,noise_num,events_summary)
     #solutions=event_solution(event_group_num)
     #将处理方法写入新事件表中
     df = pd.read_excel(path, sheet_name="工作表 1 - train")
-    df['group1']=event_group_num
-    df['cluster_id'] = cluster_id
+    df['group']=event_group_num
     df.to_excel(path,sheet_name="工作表 1 - train")
 
-    '''with open('noise_point_keywords.txt','a') as f:
+    with open('noise_point_keywords.txt','a') as f:
         for point_keywords in noise_keyword:
             f.writelines(str(point_keywords))
             f.write('\n')
     with open('noise_point_summary.txt','a') as f:
-        for point_summary in events_summary:
+        for point_summary in noise_summary:
             f.writelines(point_summary)
             f.write('\n')
     #获取新的噪点数据数量及噪点率
@@ -162,4 +161,4 @@ if __name__=="__main__":
     with open("noise_num.txt", "w", encoding='utf-8') as f:
         f.write(str(all_num)+' '+str(noise_num)+' '+str(noise_per))
     if noise_per>noise_per_threshold:
-        print('噪点率过高，需对所有噪点重新聚类')'''
+        print('噪点率过高，需对所有噪点重新聚类')

@@ -10,7 +10,7 @@ import get_grouplabel_bert
 import clusters_classify
 import tensorflow as tf
 import pandas as pd
-import schedule
+import os
 
 
 def cluster_center(X):
@@ -34,7 +34,7 @@ def update_dbscan(min_eps, max_eps, eps_step, min_min_samples, max_min_samples, 
     eps = np.arange(min_eps, max_eps, eps_step)  # eps参数从min_eps开始到max_eps，每隔eps_step进行一次
     min_samples = np.arange(min_min_samples, max_min_samples,
                             min_samples_step)  # min_samples参数从min_min_samples开始到max_min_samples,每隔min_samples_step进行一次
-    best_score = 0
+    best_score = -2
     best_score_eps = 0
     best_score_min_samples = 0
     for i in eps:
@@ -174,5 +174,4 @@ if __name__ == "__main__":
     df['cluster'] = labels
     df['word_embedding']=feature.tolist()
     df.to_excel(path, sheet_name="工作表 1 - train")
-
 
