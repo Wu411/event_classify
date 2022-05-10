@@ -93,4 +93,4 @@ if __name__=="__main__":
     with open('group_threshold.txt','w') as f:
         for i in group_threshold:
             f.writelines(str(i)+'\n')
-    os.system('test.py')
+    #os.system('test.py')

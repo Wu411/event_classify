@@ -174,4 +174,5 @@ if __name__ == "__main__":
     df['cluster'] = labels
     df['word_embedding']=feature.tolist()
     df.to_excel(path, sheet_name="工作表 1 - train")
+    #os.system('group_threshold_update.py')
 

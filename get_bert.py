@@ -87,4 +87,4 @@ if __name__ == "__main__":
     output=getbert(res_words,res_weights)
     print('保存数据')
     np.savetxt("text_vectors_new1.txt",output)
-    os.system('pre_cluster_texts.py')
+    #os.system('pre_cluster_texts.py')
