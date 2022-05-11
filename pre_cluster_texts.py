@@ -6,11 +6,8 @@ from sklearn.manifold import TSNE
 import time
 import matplotlib.pyplot as plt
 import similarity
-import get_grouplabel_bert
-import clusters_classify
-import tensorflow as tf
+
 import pandas as pd
-import os
 
 
 def cluster_center(X):
@@ -137,8 +134,16 @@ if __name__ == "__main__":
 
     # 本程序用于对现有数据进行聚类及分类
 
-    feature = np.loadtxt("text_vectors_new1.txt")
+    #feature = np.loadtxt("text_vectors_new1.txt")
+    path='D:\\毕设数据\\数据\\副本train3_增加groupname.xlsx'
+    df = pd.read_excel(path, sheet_name="工作表 1 - train")
+    tmp = df['word_embedding'].values.tolist()  # 对各个新聚类按照的group重新划分，一个新聚类可能形成多个新聚类
 
+    feature = []
+    for i in tmp:
+        i = i.lstrip('[')
+        i = i.rstrip(']')
+        feature.append(np.array(list(map(float, i.split(', ')))))
     # eps,min_samples=update_dbscan(0.2,2,0.1,2,10,1)
 
     # DBSCAN
@@ -160,19 +165,36 @@ if __name__ == "__main__":
     n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)  # 获取分簇的数目
     print('分簇的数目: %d' % n_clusters_)
     print("轮廓系数: %0.3f" % metrics.silhouette_score(feature, labels))
+
+    df['cluster'] = labels
     # 记录噪点数
     with open("noise_num.txt", "w", encoding='utf-8') as f:
         f.write(str(len(labels)) + ' ' + str(raito_num) + ' ' + str(raito))
+    events_keywords=df.loc[df['cluster']==-1]['keyword_new'].values.tolist()
+    events_summary=df.loc[df['cluster']==-1]['Summary'].values.tolist()
+    noise_keyword=[]
+    noise_summary=[]
+    for i,j in zip(events_keywords,events_summary):
+        i=i.lstrip('[')
+        i=i.rstrip(']')
+        tmp=i.split(', ')
+        noise_keyword.append(tmp)
+        noise_summary.append(j)
+
+    with open('noise_point_keywords.txt','w') as f:
+        for point_keywords in noise_keyword:
+            f.writelines(str(point_keywords))
+            f.write('\n')
+    with open('noise_point_summary.txt','w') as f:
+        for point_summary in noise_summary:
+            f.writelines(point_summary)
+            f.write('\n')
     # 可视化
     '''tsne = TSNE(n_components=2, init='pca', random_state=0)
     #t0 = time()
     data = tsne.fit_transform(feature)
     plot_embedding_2d(data, labels, float(n_clusters_), title=None)'''
 
-    path = 'D:\\毕设数据\\数据\\副本train3_增加groupname.xlsx'
-    df = pd.read_excel(path, sheet_name='工作表 1 - train')
-    df['cluster'] = labels
-    df['word_embedding']=feature.tolist()
     df.to_excel(path, sheet_name="工作表 1 - train")
     #os.system('group_threshold_update.py')
 
