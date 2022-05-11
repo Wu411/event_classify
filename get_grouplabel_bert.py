@@ -3,7 +3,7 @@ from bert_serving.client import BertClient
 import jieba
 import numpy as np
 import re
-
+from get_bert import keywords_vector
 #打开自定义词典
 with open("stopwords.txt", "r", encoding='utf-8') as f2:
     stopwords = []
@@ -67,10 +67,12 @@ def get_group_keyword(path):
     return group_keyword
 
 def get_bert(dict):
-    bc = BertClient()
+    #bc = BertClient()
     output=[]
     for seg_list in dict.values():
-        vector = bc.encode(seg_list)
+        vector=[]
+        for word in seg_list:
+            vector.append(keywords_vector[word])
         output.append(vector)#将所有类别的标签label的分词结果转化为词向量
 
     tmp = [0 for i in range(768)]
@@ -89,7 +91,6 @@ def fill(list_args, fillvalue):#将不同类别标签label分词的词向量个�
     result = []
 
     for my_list in list_args:
-        my_list=my_list.tolist()
         if len(my_list) < max_num:
             for i in range(max_num - len(my_list)):
                 my_list.append(fillvalue)
