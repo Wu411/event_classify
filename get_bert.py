@@ -107,5 +107,7 @@ if __name__ == "__main__":
     #data=load_data(path)
     # 根据提取特征的方法获得词向量
     print('保存数据')
-    np.savetxt("text_vectors_new1.txt",feature)
+    df['word_embedding']=feature
+    df.to_excel(path,sheet_name="工作表 1 - train")
+    #np.savetxt("text_vectors_new1.txt",feature)
     #os.system('pre_cluster_texts.py')
