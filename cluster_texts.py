@@ -47,8 +47,8 @@ def update_dbscan(min_eps,max_eps,eps_step,min_min_samples,max_min_samples,min_s
                 # labels=-1的个数除以总数，计算噪声点个数占总数的比例
                 n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)  # 获取分簇的数目
                 k = metrics.silhouette_score(feature, labels)
-                score =  raito
-                if score < best_score:
+                score =  raito #score=k-raito
+                if score < best_score: #if score > best_score:
                     best_score = score
                     best_score_eps = i
                     best_score_min_samples = j
@@ -219,20 +219,33 @@ if __name__ == "__main__":
         clusters_id=[]
         word_embedding=[]
         summary=[]
+        delete_index=[]
         num=0
         for i,g in cluster_group_result.items():
             num+=1
             for inx,j in enumerate(labels):
                 if i==j:
+                    delete_index.append(inx)
                     group.append(g)
                     clusters_id.append(num)
                     keywords.append(noise_keywords[inx])
                     word_embedding.append(feature[inx].tolist())
                     summary.append(noise_summary[inx])
+        new_noise_keywords=[n for i,n in enumerate(noise_keywords) if i not in delete_index]
+        new_noise_summary=[n for i,n in enumerate(noise_summary) if i not in delete_index]
+        new_noise_feature=np.delete(feature,delete_index,0)
         df=pd.DataFrame({'cluster':clusters_id,'summary':summary,'keywords':keywords,'group':group,'word_embedding':word_embedding})
         path='D:\\毕设数据\\数据\\new_clusters_group.xlsx'
         df.to_excel(path, sheet_name='Sheet1')
-
+        with open('noise_point_keywords.txt', 'w') as f:
+            for point_keywords in new_noise_keywords:
+                f.writelines(str(point_keywords))
+                f.write('\n')
+        with open('noise_point_summary.txt', 'w') as f:
+            for point_summary in new_noise_summary:
+                f.writelines(point_summary)
+                f.write('\n')
+        np.savetxt("noise_point.txt",new_noise_feature)
     '''#聚类不成功相似度衡量
     if noise_points:
         noise_group_result=clusters_classify.attention_get_bert(noise_points,key_list,group_threshold,False)
