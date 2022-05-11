@@ -1,5 +1,5 @@
 from get_keyword_new import load_data,getkeyword
-from get_bert import keywords_dict,self_dict
+from get_bert import keywords_weight,keywords_vector,self_dict
 from get_bert import getbert
 import pandas as pd
 import similarity
@@ -59,11 +59,13 @@ def new_event_getbert(path):
     # 获取每条数据关键词
     res_words = []
     res_weights = []
+    res_vector=[]
     for j in summary:
-        words, weights = getkeyword(j, keywords_dict)
+        words, weights,vectors = getkeyword(j, keywords_weight,keywords_vector)
         res_words.append(words)
         res_weights.append(weights)
-    output = getbert(res_words,res_weights)
+        res_vector.append(vectors)
+    output = getbert(res_words,res_weights,res_vector)
     return output,res_words,data
 
 #噪点数据相似度衡量及分类

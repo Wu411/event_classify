@@ -4,7 +4,13 @@ import operator
 import jieba
 import pandas as pd
 import re
+from bert_serving.client import BertClient
+import numpy as np
 
+
+config_path = 'chinese_L-12_H-768_A-12/bert_config.json'
+checkpoint_path = 'chinese_L-12_H-768_A-12/bert_model.ckpt'
+dict_path = 'chinese_L-12_H-768_A-12/vocab.txt'
 #打开自定义词典
 with open("self_dict.txt", "r", encoding='utf-8') as f2:
     self_dict = []
@@ -85,3 +91,10 @@ if __name__ == '__main__':
         for i in features:
             f.writelines(i[0]+' '+str(i[1]))
             f.write('\n')
+    words=[]
+    for i in features:
+        words.append(i[0])
+    bc = BertClient()
+    vector = bc.encode(words)
+
+    np.savetxt('keyword_vector_dict.txt',vector)

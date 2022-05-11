@@ -77,11 +77,12 @@ def format_str(tmp_txt,self_dict):
 
     return tmp_txt
 
-def getkeyword(string,keywords_dict):
+def getkeyword(string,keywords_weight,keyword_vector):
     jieba.load_userdict("self_dict.txt")#使用自定义词典
     seg_list=jieba.lcut(string)
     res=[]
     weight=[]
+    vector=[]
     num=0
     #选出前十个关键词
     '''wei=float(list(keywords_dict.values())[0])
@@ -89,14 +90,15 @@ def getkeyword(string,keywords_dict):
         if i not in res:
             res.append(i)
             weight.append(wei)'''
-    for k,v in keywords_dict.items():
+    for k,v in keywords_weight.items():
         if num == 10:
             break
         if k.strip('\'') in seg_list and k.strip('\'') not in res:
             weight.append(float(v))
+            vector.append(keyword_vector[k.strip('\'')])
             res.append(k.strip('\''))
             num+=1
-    return res,weight
+    return res,weight,vector
 
 def update_selfdict(txt,res):#将下划线和连字符所连固定搭配动态加入自定义词典
     spec_words = re.findall(r'([a-zA-Z][a-zA-Z0-9]+([-_][a-zA-Z0-9]+)+)', txt)
