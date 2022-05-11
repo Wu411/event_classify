@@ -139,7 +139,9 @@ if __name__=="__main__":
     feature,events_keywords,events_summary=new_event_getbert(path)
     #feature = np.loadtxt("text_vectors_new1.txt")
     #对新数据进行分类并获取分类结果以及对应的处理方法
-    event_group_num,noise_keyword,noise_summary=event_classify(feature,noise_num,events_summary)
+    new_noise_num=0
+    event_group_num,noise_keyword,noise_summary=event_classify(feature,new_noise_num,events_summary)
+    noise_num+=new_noise_num
     #solutions=event_solution(event_group_num)
     #将处理方法写入新事件表中
     df = pd.read_excel(path, sheet_name="工作表 1 - train")
