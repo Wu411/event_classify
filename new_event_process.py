@@ -92,7 +92,6 @@ def event_classify(event_bert,noise_num,events_keywords):
                 label += 1
                 continue
             else:#与聚类中心相似度符合阈值
-                print(label,s)
                 flag=True
                 tmp1.append(label)
                 '''for i in clusters_group[label]:#获取该聚类对应的类别结果
@@ -147,7 +146,6 @@ if __name__=="__main__":
     #将处理方法写入新事件表中
     df = pd.read_excel(path, sheet_name="工作表 1 - train")
     df['group']=event_group_num
-    df['output']=feature
     df.to_excel(path,sheet_name="工作表 1 - train")
 
     with open('noise_point_keywords.txt','a') as f:
