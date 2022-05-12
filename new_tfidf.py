@@ -61,10 +61,10 @@ def feature_select(dataset):
     for file in dataset:
         for word in file:
             doc_frequency[word] += 1
-    '''# 计算每个词的TF值
+    # 计算每个词的TF值
     word_tf = {}  # 存储没个词的tf值
     for i in doc_frequency:
-        word_tf[i] = doc_frequency[i] / sum(doc_frequency.values()) #sum(doc.frequency.values)'''
+        word_tf[i] = doc_frequency[i] / sum(doc_frequency.values()) #sum(doc.frequency.values)
 
     # 计算每个词的IDF值
     doc_num = len(dataset)
@@ -91,13 +91,12 @@ def feature_select(dataset):
 if __name__ == '__main__':
     data_list = loadDataSet()  # 加载数据
     features = feature_select(data_list)  # 所有词的TF-IDF值
+    words = []
     with open("new_all_tfidf_dict.txt", "w", encoding='utf-8') as f:
         for i in features:
             f.writelines(i[0]+' '+str(i[1]))
             f.write('\n')
-    words=[]
-    for i in features:
-        words.append(i[0])
+            words.append(i[0])
     bc = BertClient()
     vector = bc.encode(words)
 

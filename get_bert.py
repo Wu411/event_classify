@@ -11,21 +11,20 @@ config_path = 'chinese_L-12_H-768_A-12/bert_config.json'
 checkpoint_path = 'chinese_L-12_H-768_A-12/bert_model.ckpt'
 dict_path = 'chinese_L-12_H-768_A-12/vocab.txt'
 
+tmp=np.loadtxt('keyword_vector_dict.txt')
 #打开关键词词典
 with open("new_all_tfidf_dict.txt", "r", encoding='utf-8') as f:
     keywords_weight={}
+    keywords_vector = {}
+    index=0
     for line in f.readlines():
         line=line.strip('\n')
         #line = line.lstrip('(')
         #line = line.rstrip(')')
         x=line.split(' ')
         keywords_weight[x[0]]=float(x[1])
-
-tmp=np.loadtxt('keyword_vector_dict.txt')
-keywords_vector={}
-index=0
-for i in keywords_weight.keys():
-    keywords_vector[i]=tmp[index]
+        keywords_vector[x[0]]=tmp[index]
+        index+=1
 
 #打开自定义词典
 with open("self_dict.txt", "r", encoding='utf-8') as f1:
@@ -66,7 +65,6 @@ def getbert(data,weight,vector):
 
 if __name__ == "__main__":
     #本程序用于获取现有数据的词向量
-
     # 读取处理数据
     path='D:\\毕设数据\\数据\\副本train3_增加groupname.xlsx'
     print('数据预处理')
@@ -112,7 +110,6 @@ if __name__ == "__main__":
     emebdding_dict=dict(zip(keys,output))
     for event in events_keywords:
         feature.append(emebdding_dict[event])
-
     #提取每条数据关键词词向量
     #data=load_data(path)
     # 根据提取特征的方法获得词向量
