@@ -33,7 +33,7 @@ def update_selfdict(path):
 
 #获取各个类别的标签label并分词
 def get_group_keyword(path):
-    update_selfdict(path)
+    #update_selfdict(path)
     df = pd.read_excel(path, sheet_name="工作表 1 - train")
     '''data = df.loc[:,['id','description']]
     group = data['id'].values.tolist()
