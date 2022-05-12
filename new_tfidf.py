@@ -61,10 +61,10 @@ def feature_select(dataset):
     for file in dataset:
         for word in file:
             doc_frequency[word] += 1
-    # 计算每个词的TF值
+    ''''# 计算每个词的TF值
     word_tf = {}  # 存储没个词的tf值
     for i in doc_frequency:
-        word_tf[i] = doc_frequency[i] / sum(doc_frequency.values()) #sum(doc.frequency.values)
+        word_tf[i] = doc_frequency[i] / sum(doc_frequency.values()) #sum(doc.frequency.values)'''
 
     # 计算每个词的IDF值
     doc_num = len(dataset)
