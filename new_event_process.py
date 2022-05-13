@@ -115,7 +115,7 @@ def event_classify(event_bert,noise_num,events_keywords,events_summary):
     if noise_point:
         with open('noise_point.txt', 'a') as f:
             np.savetxt(f,noise_point)
-    return res,noise_keyword,noise_summary
+    return res,noise_keyword,noise_summary,noise_num
 
 #获取新事件处理方案
 def event_solution(event_group_num):
@@ -142,7 +142,8 @@ if __name__=="__main__":
     #feature = np.loadtxt("text_vectors_new1.txt")
     #对新数据进行分类并获取分类结果以及对应的处理方法
     new_noise_num=0
-    event_group_num,noise_keyword,noise_summary=event_classify(feature,new_noise_num,events_keywords,events_summary)
+    event_group_num,noise_keyword,noise_summary,new_noise_num=event_classify(feature,new_noise_num,events_keywords,events_summary)
+    print(new_noise_num,noise_num)
     noise_num+=new_noise_num
     #solutions=event_solution(event_group_num)
     #将处理方法写入新事件表中

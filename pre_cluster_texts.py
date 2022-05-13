@@ -172,15 +172,20 @@ if __name__ == "__main__":
         f.write(str(len(labels)) + ' ' + str(raito_num) + ' ' + str(raito))
     events_keywords=df.loc[df['cluster']==-1]['keyword_new'].values.tolist()
     events_summary=df.loc[df['cluster']==-1]['Summary'].values.tolist()
+    events_feature=df.loc[df['cluster']==-1]['word_embedding'].values.tolist()
     noise_keyword=[]
     noise_summary=[]
-    for i,j in zip(events_keywords,events_summary):
+    noise_feature=[]
+    for i,j,k in zip(events_keywords,events_summary,events_feature):
         i=i.lstrip('[')
         i=i.rstrip(']')
         tmp=i.split(', ')
+        k=k.lstrip('[')
+        k=k.rstrip(']')
+        tmp1=k.split(', ')
         noise_keyword.append(tmp)
         noise_summary.append(j)
-
+        noise_feature.append(list(map(float,tmp1)))
     with open('noise_point_keywords.txt','w') as f:
         for point_keywords in noise_keyword:
             f.writelines(str(point_keywords))
@@ -189,6 +194,8 @@ if __name__ == "__main__":
         for point_summary in noise_summary:
             f.writelines(point_summary)
             f.write('\n')
+    np.savetxt('noise_point.txt', np.array(noise_feature))
+
     # 可视化
     '''tsne = TSNE(n_components=2, init='pca', random_state=0)
     #t0 = time()
