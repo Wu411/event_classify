@@ -75,11 +75,12 @@ def noise_process(noise_point,key_list):
     return groups_result
 
 #新数据分类
-def event_classify(event_bert,noise_num,events_keywords):
+def event_classify(event_bert,noise_num,events_keywords,events_summary):
     res=[]
     cluster_id = []
     noise_point=[]
     noise_keyword=[]
+    noise_summary=[]
     key_list = tf.convert_to_tensor(groups_label_bert)
     for index,new in enumerate(event_bert):
         flag=False
@@ -107,13 +108,14 @@ def event_classify(event_bert,noise_num,events_keywords):
             noise_num+=1
             noise_point.append(new)
             noise_keyword.append(events_keywords[index])
+            noise_summary.append(events_summary[index])
             group_num = noise_process(np.array(new),key_list)
             res.append(group_num)
             cluster_id.append(-1)
     if noise_point:
         with open('noise_point.txt', 'a') as f:
             np.savetxt(f,noise_point)
-    return res,noise_keyword,noise_keyword
+    return res,noise_keyword,noise_summary
 
 #获取新事件处理方案
 def event_solution(event_group_num):
@@ -140,7 +142,7 @@ if __name__=="__main__":
     #feature = np.loadtxt("text_vectors_new1.txt")
     #对新数据进行分类并获取分类结果以及对应的处理方法
     new_noise_num=0
-    event_group_num,noise_keyword,noise_summary=event_classify(feature,new_noise_num,events_summary)
+    event_group_num,noise_keyword,noise_summary=event_classify(feature,new_noise_num,events_keywords,events_summary)
     noise_num+=new_noise_num
     #solutions=event_solution(event_group_num)
     #将处理方法写入新事件表中
