@@ -179,7 +179,11 @@ if __name__ == "__main__":
     for i,j,k in zip(events_keywords,events_summary,events_feature):
         i=i.lstrip('[')
         i=i.rstrip(']')
-        tmp=i.split(', ')
+        i=i.split(', ')
+        tmp=[]
+        for m in i:
+            m=m.strip('\'')
+            tmp.append(m)
         k=k.lstrip('[')
         k=k.rstrip(']')
         tmp1=k.split(', ')
