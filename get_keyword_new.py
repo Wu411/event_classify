@@ -72,7 +72,7 @@ def format_str(tmp_txt,self_dict):
     tmp_txt = re.sub(r'\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*', 'Email', tmp_txt)
     update_selfdict(tmp_txt,self_dict)#动态更新自定义词典，加入以下划线和连字符连接的词组
     tmp_txt = re.sub(r'[A-Za-z0-9]{20,}', 'code', tmp_txt)
-    tmp_txt = re.sub(r'(-?\d+)(\.\d+)?', 'NUMBER', tmp_txt)
+    #tmp_txt = re.sub(r'(-?\d+)(\.\d+)?', 'NUMBER', tmp_txt)
     tmp_txt = re.sub(r'[^\u4e00-\u9fa5A-Za-z0-9]{2,}', 'symbol', tmp_txt)
 
     return tmp_txt

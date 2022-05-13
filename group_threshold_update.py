@@ -35,21 +35,27 @@ def load_correct_event_classify(path):
     cluster_group=[]
     for cluster in cluster_num:
         if cluster==-1:
-            continue
-        clutser_groups_num=df.loc[df['cluster']==cluster]['group_num'].drop_duplicates().values.tolist()#获取各个新聚类中包含的所有group结果
-        for group_num in clutser_groups_num:
-            cluster_group.append(int(group_num))
-            tmp=df.loc[(df['group_num']==group_num)&(df['cluster']==cluster)]['word_embedding'].values.tolist()#对各个新聚类按照的group重新划分，一个新聚类可能形成多个新聚类
-
-            res=[]
-            for i in tmp:
+            noise = []
+            noise_group = df.loc[df['cluster'] == cluster]['group_num'].values.tolist()
+            data = df.loc[df['cluster'] == -1]['word_embedding'].values.tolist()
+            for i in data:
                 i = i.lstrip('[')
                 i = i.rstrip(']')
-                res.append(np.array(list(map(float,i.split(', ')))))
-            center_pos = cluster_center(res)#获取重新划分后的各个聚类中心
-            centers_pos.append(center_pos[0])
-            threshold = cul_clusters_threshold(center_pos, res)  # 计算重新划分后的各个聚类相似度阈值
-            clusters_threshold.append(threshold)
+                noise.append(np.array(list(map(float, i.split(', ')))))
+        else:
+            clutser_groups_num=df.loc[df['cluster']==cluster]['group_num'].drop_duplicates().values.tolist()#获取各个新聚类中包含的所有group结果
+            for group_num in clutser_groups_num:
+                cluster_group.append(int(group_num))
+                tmp=df.loc[(df['group_num']==group_num)&(df['cluster']==cluster)]['word_embedding'].values.tolist()#对各个新聚类按照的group重新划分，一个新聚类可能形成多个新聚类
+                res=[]
+                for i in tmp:
+                    i = i.lstrip('[')
+                    i = i.rstrip(']')
+                    res.append(np.array(list(map(float,i.split(', ')))))
+                center_pos = cluster_center(res)#获取重新划分后的各个聚类中心
+                centers_pos.append(center_pos[0])
+                threshold = cul_clusters_threshold(center_pos, res)  # 计算重新划分后的各个聚类相似度阈值
+                clusters_threshold.append(threshold)
     #更新新聚类对应的group
     with open("clusters_group.txt", "a", encoding='utf-8') as f:
         for i in cluster_group:
@@ -63,7 +69,7 @@ def load_correct_event_classify(path):
         for i in clusters_threshold:
             f.write(str(i))
             f.write('\n')
-    return centers_pos,cluster_group
+    return centers_pos,cluster_group,noise,noise_group
 
 def attention(query,key_list):
 
@@ -71,7 +77,7 @@ def attention(query,key_list):
 
     return result
 
-def cul_group_threshold(cluster_group,centers,keys_list,group_threshold):
+def cluster_cul_group_threshold(cluster_group,centers,keys_list,group_threshold):
     for i, j in enumerate(centers):
         group = cluster_group[i]
         threshold = group_threshold[group]
@@ -85,12 +91,26 @@ def cul_group_threshold(cluster_group,centers,keys_list,group_threshold):
             group_threshold[group] = s
     return group_threshold
 
+def noise_cul_group_threshold(cluster_group,centers,keys_list,group_threshold,flag):
+    for point,group in zip(centers,cluster_group):
+        threshold = group_threshold[int(group)]
+        query = tf.convert_to_tensor(np.asarray(point).reshape(1, 1, 768))
+        result = attention(query, tf.convert_to_tensor(
+            np.asarray(keys_list[int(group)]).reshape(1, -1, 768)))  # 利用注意力机制和中心向量得出的所有的类别代表向量
+        with tf.Session() as sess:
+            result = result.eval()
+        s = similarity.cosSim(np.array(point), result[0][0])
+        if s < threshold:
+            group_threshold[int(group)] = s
+    return group_threshold
 if __name__=="__main__":
     path = 'D:\\毕设数据\\数据\\副本train3_增加groupname.xlsx'
-    centers_pos,new_groups_num=load_correct_event_classify(path)
+    centers_pos,new_groups_num,noise,noise_group=load_correct_event_classify(path)
     #key_list=tf.convert_to_tensor(groups_label_bert)
-    group_threshold=cul_group_threshold(new_groups_num,centers_pos,groups_label_bert,group_threshold)
+    group_threshold=cluster_cul_group_threshold(new_groups_num,centers_pos,groups_label_bert,group_threshold)
+    group_threshold = noise_cul_group_threshold(noise_group, noise, groups_label_bert, group_threshold,False)
     with open('group_threshold.txt','w') as f:
         for i in group_threshold:
             f.writelines(str(i)+'\n')
+
     #os.system('test.py')

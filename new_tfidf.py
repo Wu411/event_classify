@@ -36,11 +36,12 @@ def loadDataSet():
     update_selfdict(tmp_list,self_dict)
     jieba.load_userdict("self_dict.txt")
     dataset = []
+    num = re.compile(r'((-?\d+)(\.\d+)?)')
     test=re.compile(r'\W+')
     for w in tmp_list:
         l=[]
         for j in jieba.lcut(w):
-            if not test.match(j):
+            if not test.match(j) and not num.match(j):
                 l.append(j.casefold())
         dataset.append(l)
     return dataset

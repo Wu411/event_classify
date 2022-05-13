@@ -81,11 +81,12 @@ if __name__ == "__main__":
         words,weights,vectors=get_keyword_new.getkeyword(j, keywords_weight,keywords_vector)
         res_words.append(words)
         res_weights.append(weights)
-        res_vector=.append(vectors)
+        res_vector.append(vectors)
     print("数据关键词获取结束")
     df = pd.read_excel(path, sheet_name="工作表 1 - train")
     df['keyword_new'] = res_words
-    df.to_excel(path, sheet_name="工作表 1 - train")'''
+    df.to_excel(path, sheet_name="工作表 1 - train")
+    '''
     df = pd.read_excel(path, sheet_name="工作表 1 - train")
     events_keywords = df['keyword_new'].values.tolist()
     keys = df['keyword_new'].drop_duplicates().values.tolist()
