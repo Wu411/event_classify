@@ -81,18 +81,18 @@ def cul_culsters_center(point_feature,point_labels):
         pos += 1
 
     clusters_center = {}#聚类中心向量字典
-    clusters_threshold={}#聚类相似度阈值字典
     for label, data in label_classify.items():
         if label != -1:
             center_pos = cluster_center(data)
 
             clusters_center[label] = center_pos
 
-    if label_classify[-1]:
+    if -1 not in label_classify.keys():
+        return clusters_center,[]
+    else:
         #将所有聚类的噪点向量写入文件
         np.savetxt("noise_point.txt",label_classify[-1])
-
-    return clusters_center,label_classify[-1]
+        return clusters_center,label_classify[-1]
 #可视化
 def plot_embedding_3d(X, target, num,title=None):
     #坐标缩放到[0,1]区间
