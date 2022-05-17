@@ -33,32 +33,28 @@ def load_correct_event_classify(path):
     centers_pos=[]
     clusters_threshold=[]
     cluster_group=[]
-    inx=0
-    for cluster in cluster_num:
-        if cluster==-1:
-            noise = []
-            noise_group = df.loc[df['cluster'] == cluster]['group_num'].values.tolist()
-            data = df.loc[df['cluster'] == -1]['word_embedding'].values.tolist()
-            for i in data:
+    inx=len(open(r"clusters_group.txt",'r').readlines())
+    df['new_cluster_id'] = df['cluster']
+    for cluster in range(inx,len(cluster_num)):
+        clutser_groups_num = df.loc[df['cluster'] == cluster][
+            'group_num'].drop_duplicates().values.tolist()  # 获取各个新聚类中包含的所有group结果
+        for group_num in clutser_groups_num:
+            cluster_group.append(int(group_num))
+            tmp = df.loc[(df['group_num'] == group_num) & (df['cluster'] == cluster)][
+                'word_embedding'].values.tolist()  # 对各个新聚类按照的group重新划分，一个新聚类可能形成多个新聚类
+            df['new_cluster_id'].loc[(df['group_num'] == group_num) & (df['cluster'] == cluster)] = [inx for i in
+                                                                                                     range(len(tmp))]
+            inx += 1
+            res = []
+            for i in tmp:
                 i = i.lstrip('[')
                 i = i.rstrip(']')
-                noise.append(np.array(list(map(float, i.split(', ')))))
-        else:
-            clutser_groups_num=df.loc[df['cluster']==cluster]['group_num'].drop_duplicates().values.tolist()#获取各个新聚类中包含的所有group结果
-            for group_num in clutser_groups_num:
-                cluster_group.append(int(group_num))
-                tmp=df.loc[(df['group_num']==group_num)&(df['cluster']==cluster)]['word_embedding'].values.tolist()#对各个新聚类按照的group重新划分，一个新聚类可能形成多个新聚类
-                df['new_cluster_id'].loc[(df['group_num'] == group_num) & (df['cluster'] == cluster)]=[inx for i in range(len(tmp))]
-                inx+=1
-                res=[]
-                for i in tmp:
-                    i = i.lstrip('[')
-                    i = i.rstrip(']')
-                    res.append(np.array(list(map(float,i.split(', ')))))
-                center_pos = cluster_center(res)#获取重新划分后的各个聚类中心
-                centers_pos.append(center_pos[0])
-                threshold = cul_clusters_threshold(center_pos, res)  # 计算重新划分后的各个聚类相似度阈值
-                clusters_threshold.append(threshold)
+                res.append(np.array(list(map(float, i.split(', ')))))
+            center_pos = cluster_center(res)  # 获取重新划分后的各个聚类中心
+            centers_pos.append(center_pos[0])
+            threshold = cul_clusters_threshold(center_pos, res)  # 计算重新划分后的各个聚类相似度阈值
+            clusters_threshold.append(threshold)
+
     df['cluster']=df['new_cluster_id'].values.tolist()
     df=df.drop(labels='new_cluster_id',axis=1)
     df.to_excel(path,sheet_name='工作表 1 - train')
@@ -75,6 +71,15 @@ def load_correct_event_classify(path):
         for i in clusters_threshold:
             f.write(str(i))
             f.write('\n')
+
+    noise = []
+    noise_group = df.loc[df['cluster'] == -1]['group_num'].values.tolist()
+    data = df.loc[df['cluster'] == -1]['word_embedding'].values.tolist()
+    for i in data:
+        i = i.lstrip('[')
+        i = i.rstrip(']')
+        noise.append(np.array(list(map(float, i.split(', ')))))
+
     return centers_pos,cluster_group,noise,noise_group
 
 def attention(query,key_list):

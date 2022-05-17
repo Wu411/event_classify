@@ -190,14 +190,14 @@ if __name__ == "__main__":
         noise_keyword.append(tmp)
         noise_summary.append(j)
         noise_feature.append(list(map(float,tmp1)))
-    with open('noise_point_keywords.txt','w') as f:
+    '''with open('noise_point_keywords.txt','w') as f:
         for point_keywords in noise_keyword:
             f.writelines(str(point_keywords))
             f.write('\n')
     with open('noise_point_summary.txt','w') as f:
         for point_summary in noise_summary:
             f.writelines(point_summary)
-            f.write('\n')
+            f.write('\n')'''
     np.savetxt('noise_point.txt', np.array(noise_feature))
 
     # 可视化
@@ -208,4 +208,14 @@ if __name__ == "__main__":
 
     df.to_excel(path, sheet_name="工作表 1 - train")
     #os.system('group_threshold_update.py')
+    # 更新新聚类对应的group
+    with open("clusters_group.txt", "a", encoding='utf-8') as f:
+        f.truncate(0)
+    # 更新聚类中心表
+    with open('clusters_center.txt', 'a') as f:
+        f.truncate(0)
+    # 更新聚类相似度阈值
+    with open('clusters_threshold.txt', 'a') as f:
+        f.truncate(0)
+
 

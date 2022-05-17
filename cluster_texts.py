@@ -200,7 +200,7 @@ if __name__ == "__main__":
     if clusters_center:
         cluster_group_result=clusters_classify.attention_get_bert(clusters_center,key_list,group_threshold,True)
 
-        noise_keywords=[]
+        '''noise_keywords=[]
         with open('noise_point_keywords.txt', 'r') as f:
             for line in f.readlines():
                 tmp = line.strip('\n')
@@ -236,7 +236,7 @@ if __name__ == "__main__":
         new_noise_feature=np.delete(feature,delete_index,0)
         df=pd.DataFrame({'cluster':clusters_id,'summary':summary,'keywords':keywords,'group':group,'word_embedding':word_embedding})
         path='D:\\毕设数据\\数据\\new_clusters_group.xlsx'
-        df.to_excel(path, sheet_name='Sheet1')
+        df=pd.read_excel(path,sheet_name='Sheet1')
         with open('noise_point_keywords.txt', 'w') as f:
             for point_keywords in new_noise_keywords:
                 f.writelines(str(point_keywords))
@@ -245,7 +245,25 @@ if __name__ == "__main__":
             for point_summary in new_noise_summary:
                 f.writelines(point_summary)
                 f.write('\n')
-        np.savetxt("noise_point.txt",new_noise_feature)
+        np.savetxt("noise_point.txt",new_noise_feature)'''
+        path = 'D:\\毕设数据\\数据\\副本train3_增加groupname.xlsx'
+        df=pd.read_excel(path,sheet_name='工作表 1 - train')
+        tmp=max(df['cluster'].values.tolist())+1
+        new_labels=[]
+        for i in labels:
+            if i!=-1:
+                new_labels.append(i+tmp)
+            else:
+                new_labels.append(-1)
+        df['cluster'].loc[df['cluster'] == -1] = new_labels
+        tmp1=df.loc[df['cluster'] == -1]['word_embedding'].values.tolist()
+        new_noise_feature = []
+        for i in tmp1:
+            i = i.lstrip('[')
+            i = i.rstrip(']')
+            new_noise_feature.append(np.array(list(map(float, i.split(', ')))))
+        df.to_excel(path, sheet_name='工作表 1 - train')
+        np.savetxt("noise_point.txt", np.array(new_noise_feature))
     '''#聚类不成功相似度衡量
     if noise_points:
         noise_group_result=clusters_classify.attention_get_bert(noise_points,key_list,group_threshold,False)
