@@ -75,14 +75,13 @@ def noise_process(noise_point,key_list):
     return groups_result
 
 #新数据分类
-def event_classify(event_bert,noise_num,events_keywords,events_summary):
-    res=[]
-    cluster_id = []
-    noise_point=[]
-    noise_keyword=[]
-    noise_summary=[]
+def event_classify(event_bert,noise_num,res,cluster_id):
+
     key_list = tf.convert_to_tensor(groups_label_bert)
-    for index,new in enumerate(event_bert):
+    for index,group in enumerate(res):
+        if group:
+            continue
+        new=event_bert[index]
         flag=False
         tmp=[]
         tmp1=[]
@@ -94,28 +93,54 @@ def event_classify(event_bert,noise_num,events_keywords,events_summary):
                 continue
             else:#与聚类中心相似度符合阈值
                 flag=True
-                tmp1.append(label)
-                '''for i in clusters_group[label]:#获取该聚类对应的类别结果
-                    if i not in tmp:
-                        tmp.append(i)'''
-                if clusters_group[label] not in tmp:
-                    tmp.append(clusters_group[label])
+                tmp.append(tuple(clusters_group[label],s))
+                tmp1.append(tuple(label, s))
                 label += 1
         if flag==True:#能找到所属聚类
-            res.append(tmp)
-            cluster_id.append(tmp1)
+            tmp = tmp.sort(key=lambda x: x[1])
+            tmp1 = tmp1.sort(key=lambda x: x[1])
+            num=0
+            for m,n in zip(tmp,tmp1):
+                if num==5:
+                    break
+                if m not in res[index]:
+                    res[index].append(m)
+                    cluster_id[index].append(n)
+                    num+=1
         else:#未找到所属聚类，按噪点数据分类处理
             noise_num+=1
-            noise_point.append(new)
-            noise_keyword.append(events_keywords[index])
-            noise_summary.append(events_summary[index])
+            #noise_point.append(new)
+            #noise_keyword.append(events_keywords[index])
+            #noise_summary.append(events_summary[index])
             group_num = noise_process(np.array(new),key_list)
-            res.append(group_num)
-            cluster_id.append(-1)
-    if noise_point:
-        with open('noise_point.txt', 'a') as f:
-            np.savetxt(f,noise_point)
-    return res,noise_keyword,noise_summary,noise_num
+            res[index]=group_num
+            cluster_id[index].append(-1)
+
+    return res,cluster_id
+
+def first_classify(event_keywords):
+    path='D:\\毕设数据\\数据\\副本train3_增加groupname.xlsx'
+    df = pd.read_excel(path, sheet_name="工作表 1 - train")
+    data=df[['keyword_new','cluster','group_num']].drop_duplicates()
+    keyword_list = data['keyword_new'].values.tolist()
+    group_num = data['group_num'].values.tolist()
+    cluster = data['cluster'].values.tolist()
+    group_res=[]
+    cluster_res=[]
+    for event in event_keywords:
+        group_tmp=[]
+        cluster_tmp=[]
+        for i,j,z in zip(keyword_list,group_num,cluster):
+            if i == str(event):
+                group_tmp.append(j)
+                cluster_tmp.append(z)
+        if group_tmp and cluster_tmp:
+            group_res.append(group_tmp)
+            cluster_res.append(cluster_tmp)
+        else:
+            group_res.append([])
+            cluster_res.append([])
+    return group_res,cluster_res
 
 #获取新事件处理方案
 def event_solution(event_group_num):
@@ -142,23 +167,26 @@ if __name__=="__main__":
     #feature = np.loadtxt("text_vectors_new1.txt")
     #对新数据进行分类并获取分类结果以及对应的处理方法
     new_noise_num=0
-    event_group_num,noise_keyword,noise_summary,new_noise_num=event_classify(feature,new_noise_num,events_keywords,events_summary)
+    #event_group_num,noise_keyword,noise_summary,new_noise_num=event_classify(feature,new_noise_num,events_keywords,events_summary)
+    event_group_num, cluster = first_classify(events_keywords)
+    event_group_num, cluster = event_classify(feature, new_noise_num,event_group_num, cluster)
     print(new_noise_num,noise_num)
     noise_num+=new_noise_num
     #solutions=event_solution(event_group_num)
     #将处理方法写入新事件表中
     df = pd.read_excel(path, sheet_name="工作表 1 - train")
     df['group']=event_group_num
+    df['cluster'] = cluster
     df.to_excel(path,sheet_name="工作表 1 - train")
 
-    with open('noise_point_keywords.txt','a') as f:
+    '''with open('noise_point_keywords.txt','a') as f:
         for point_keywords in noise_keyword:
             f.writelines(str(point_keywords))
             f.write('\n')
     with open('noise_point_summary.txt','a') as f:
         for point_summary in noise_summary:
             f.writelines(point_summary)
-            f.write('\n')
+            f.write('\n')'''
     #获取新的噪点数据数量及噪点率
     all_num = all_num+len(feature)
     noise_per_threshold=0.1#设定噪点率阈值
