@@ -130,8 +130,16 @@ if __name__ == "__main__":
     #本程序用于对现有数据进行聚类及分类
 
     #feature = np.loadtxt("text_vectors_new1.txt")
-    feature = np.loadtxt("noise_point.txt")
+    #feature = np.loadtxt("noise_point.txt")
+    path = 'D:\\毕设数据\\数据\\副本train3_增加groupname.xlsx'
+    df = pd.read_excel(path, sheet_name="工作表 1 - train")
+    tmp = df.loc['cluster'==-1]['word_embedding'].values.tolist()  # 对各个新聚类按照的group重新划分，一个新聚类可能形成多个新聚类
 
+    feature = []
+    for i in tmp:
+        i = i.lstrip('[')
+        i = i.rstrip(']')
+        feature.append(np.array(list(map(float, i.split(', ')))))
     #print(feature.shape)
 
     #eps,min_samples=update_dbscan(0.2,2,0.1,2,10,1)
@@ -246,13 +254,12 @@ if __name__ == "__main__":
                 f.writelines(point_summary)
                 f.write('\n')
         np.savetxt("noise_point.txt",new_noise_feature)'''
-        path = 'D:\\毕设数据\\数据\\副本train3_增加groupname.xlsx'
-        df=pd.read_excel(path,sheet_name='工作表 1 - train')
-        tmp=max(df['cluster'].values.tolist())+1
+
+        beg=max(df['cluster'].values.tolist())+1
         new_labels=[]
         for i in labels:
             if i!=-1:
-                new_labels.append(i+tmp)
+                new_labels.append(i+beg)
             else:
                 new_labels.append(-1)
         df['cluster'].loc[df['cluster'] == -1] = new_labels
@@ -263,7 +270,7 @@ if __name__ == "__main__":
             i = i.rstrip(']')
             new_noise_feature.append(np.array(list(map(float, i.split(', ')))))
         df.to_excel(path, sheet_name='工作表 1 - train')
-        np.savetxt("noise_point.txt", np.array(new_noise_feature))
+        #np.savetxt("noise_point.txt", np.array(new_noise_feature))
     '''#聚类不成功相似度衡量
     if noise_points:
         noise_group_result=clusters_classify.attention_get_bert(noise_points,key_list,group_threshold,False)
